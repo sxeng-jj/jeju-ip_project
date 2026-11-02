@@ -1,10 +1,19 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { Container, Nav, Navbar, Toast } from 'react-bootstrap'
+import { useEffect } from 'react'
+import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Button, Container, Nav, Navbar, Toast } from 'react-bootstrap'
 import { NAV_ITEMS } from '../router'
 import { useAppStore } from '../store/useAppStore'
 
 export default function RootLayout() {
   const toasts = useAppStore((s) => s.toasts)
+  const user = useAppStore((s) => s.user)
+  const nickname = useAppStore((s) => s.nickname)
+  const authReady = useAppStore((s) => s.authReady)
+  const initAuth = useAppStore((s) => s.initAuth)
+  const signOut = useAppStore((s) => s.signOut)
+
+  // 저장된 로그인 상태를 읽고, 이후 로그인·로그아웃을 계속 따라간다
+  useEffect(() => initAuth(), [initAuth])
 
   return (
     <>
@@ -22,6 +31,21 @@ export default function RootLayout() {
                 </Nav.Link>
               ))}
             </Nav>
+
+            {/* 로그인 영역: 저장된 상태를 확인하기 전에는 비워 두어 '로그아웃'이 잠깐 깜빡이지 않게 한다 */}
+            <div className="d-flex align-items-center gap-2 ms-md-3 mt-2 mt-md-0">
+              {authReady && (user ? (
+                <>
+                  <span className="small text-nowrap"><i className="bi bi-person-circle me-1 text-warning" />{nickname}님</span>
+                  <Button size="sm" variant="outline-secondary" onClick={signOut}>로그아웃</Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="btn btn-sm btn-outline-primary">로그인</Link>
+                  <Link to="/signup" className="btn btn-sm btn-primary">회원가입</Link>
+                </>
+              ))}
+            </div>
           </Navbar.Collapse>
         </Container>
       </Navbar>

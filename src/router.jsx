@@ -5,6 +5,8 @@ import Festivals from './pages/Festivals'
 import FestivalDetail from './pages/FestivalDetail'
 import Stamps from './pages/Stamps'
 import Agent from './pages/Agent'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 import NotFound from './pages/NotFound'
 
 // 페이지 추가: ① pages/ 에 파일 ② NAV_ITEMS 한 줄 ③ routes 한 줄
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
       { path: 'map', lazy: async () => ({ Component: (await import('./pages/Map3D')).default }) },
       { path: 'stamps', element: <Stamps /> },
       { path: 'agent', element: <Agent /> },
+      { path: 'login', element: <Login /> },
+      { path: 'signup', element: <Signup /> },
     ],
   },
 ])

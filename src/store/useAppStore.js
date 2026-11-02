@@ -1,17 +1,60 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { translateAuthError } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
 
 const NO_DB = 'Supabase 설정(.env.local)이 필요해요'
-const NO_NICK = '먼저 "내 스탬프" 페이지에서 닉네임을 정해 주세요'
+const NEED_LOGIN = '스탬프는 로그인 후에 찍을 수 있어요'
 
-// 여러 페이지가 함께 쓰는 상태. 사용법: const nickname = useAppStore((s) => s.nickname)
+// 닉네임: 가입할 때 적은 이름, 없으면 이메일 앞부분
+const displayName = (user) => (user ? user.user_metadata?.nickname || user.email?.split('@')[0] || '회원' : '')
+
+// 여러 페이지가 함께 쓰는 상태. 사용법: const user = useAppStore((s) => s.user)
 export const useAppStore = create(
   persist(
     (set, get) => ({
-      // 사용자 닉네임 (localStorage 에 저장)
-      nickname: '',
-      setNickname: (nickname) => set({ nickname: nickname.trim(), stamps: [] }),
+      // ── 로그인(Supabase Auth) ──
+      user: null, // 로그인한 회원 (없으면 null)
+      nickname: '', // user 에서 뽑은 표시 이름. 로그인하지 않으면 빈 문자열
+      authReady: false, // 저장된 로그인 상태를 확인했는가 (확인 전에는 '로그아웃 상태'로 단정하지 않는다)
+
+      // 앱이 켜질 때 한 번 호출: 저장된 세션을 읽고, 로그인·로그아웃이 일어날 때마다 상태를 맞춘다. 반환값은 구독 해제 함수.
+      initAuth: () => {
+        if (!supabase) { set({ authReady: true }); return () => {} }
+        const apply = (session) => {
+          const user = session?.user ?? null
+          set({ user, nickname: displayName(user), authReady: true, ...(user ? {} : { stamps: [] }) })
+        }
+        supabase.auth.getSession().then(({ data }) => apply(data.session))
+        const { data } = supabase.auth.onAuthStateChange((_event, session) => apply(session))
+        return () => data.subscription.unsubscribe()
+      },
+
+      // 회원가입. 이메일 확인이 켜져 있으면 세션이 오지 않으므로 needsConfirm 으로 알려 준다.
+      signUp: async ({ email, password, nickname }) => {
+        if (!supabase) return { ok: false, error: NO_DB }
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { nickname }, emailRedirectTo: `${window.location.origin}/login` },
+        })
+        if (error) return { ok: false, error: translateAuthError(error) }
+        // 이미 가입된 이메일이면 오류 대신 identities 가 빈 사용자가 돌아온다 (계정 존재 여부를 숨기려는 Supabase 동작)
+        if (data.user && data.user.identities?.length === 0) return { ok: false, error: translateAuthError({ code: 'user_already_exists' }) }
+        return { ok: true, needsConfirm: !data.session }
+      },
+
+      signIn: async ({ email, password }) => {
+        if (!supabase) return { ok: false, error: NO_DB }
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        return error ? { ok: false, error: translateAuthError(error) } : { ok: true }
+      },
+
+      signOut: async () => {
+        if (!supabase) return
+        await supabase.auth.signOut()
+        get().toast('로그아웃했어요', 'secondary')
+      },
 
       // 알림(토스트): get().toast('메시지')
       toasts: [],
@@ -21,37 +64,38 @@ export const useAppStore = create(
         setTimeout(() => set({ toasts: get().toasts.filter((t) => t.id !== id) }), 2500)
       },
 
-      // 스탬프 — Supabase stamps 테이블과 동기화
+      // 스탬프 — Supabase stamps 테이블과 동기화 (로그인한 본인의 행만 쓸 수 있다: supabase/auth.sql)
       stamps: [],
       stampsLoading: false,
 
       loadStamps: async () => {
-        const { nickname, toast } = get()
-        if (!supabase || !nickname) return set({ stamps: [] })
+        const { user, toast } = get()
+        if (!supabase || !user) return set({ stamps: [] })
         set({ stampsLoading: true })
         const { data, error } = await supabase
           .from('stamps').select('*')
-          .eq('nickname', nickname)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
         set({ stampsLoading: false })
         if (error) return toast(error.message, 'danger')
         set({ stamps: data })
       },
 
-      // 같은 축제를 다시 찍으면 별점·후기만 갱신 (nickname + festival_id 가 유일)
+      // 같은 축제를 다시 찍으면 별점·후기만 갱신 (user_id + festival_id 가 유일)
       saveStamp: async (festival, { rating, comment }) => {
-        const { nickname, toast } = get()
+        const { user, nickname, toast } = get()
         if (!supabase) return toast(NO_DB, 'warning')
-        if (!nickname) return toast(NO_NICK, 'warning')
+        if (!user) return toast(NEED_LOGIN, 'warning')
         const row = {
-          nickname,
+          user_id: user.id,
+          nickname, // 후기에 보여줄 이름 (그때그때의 닉네임을 복사해 둔다)
           festival_id: String(festival.id),
           festival_title: festival.title,
           rating: rating || null,
           comment: comment?.trim() || null,
         }
         const { data, error } = await supabase
-          .from('stamps').upsert(row, { onConflict: 'nickname,festival_id' }).select().single()
+          .from('stamps').upsert(row, { onConflict: 'user_id,festival_id' }).select().single()
         if (error) return toast(error.message, 'danger')
         set({ stamps: [data, ...get().stamps.filter((s) => s.id !== data.id)] })
         toast('스탬프를 찍었어요!')
@@ -81,7 +125,7 @@ export const useAppStore = create(
         set({ reviews: map })
       },
 
-      // 내 일정 — 담아 둔 축제 id (3D 지도에서 동선과 이동 거리를 비교한다)
+      // 내 일정 — 담아 둔 축제 id (3D 지도에서 동선과 이동 거리를 비교한다). 이 브라우저에만 저장된다.
       plan: [],
       togglePlan: (id) => {
         const plan = get().plan
@@ -101,7 +145,9 @@ export const useAppStore = create(
     }),
     {
       name: 'jeju-festa-store',
-      partialize: (s) => ({ nickname: s.nickname, plan: s.plan }),
+      partialize: (s) => ({ plan: s.plan }),
+      // 예전 버전이 저장해 둔 닉네임이 로그인 상태를 덮어쓰지 않도록, 저장값에서는 plan 만 가져온다
+      merge: (persisted, current) => ({ ...current, plan: persisted?.plan ?? current.plan }),
     },
   ),
 )

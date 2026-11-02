@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Alert, Button, Card, Col, Container, Form, InputGroup, ProgressBar, Row, Spinner } from 'react-bootstrap'
+import { Alert, Button, Card, Col, Container, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import PageHeader from '../components/PageHeader'
 import { fetchFestivals } from '../api/client'
 import { buildCollection } from '../lib/badges'
@@ -10,18 +10,18 @@ import { useAppStore } from '../store/useAppStore'
 const Stars = ({ n }) =>
   [1, 2, 3, 4, 5].map((i) => <i key={i} className={`bi bi-star${i <= n ? '-fill' : ''} text-warning me-1`} />)
 
-// 닉네임 정하기 + 내 스탬프·후기 + 도감 진행률과 배지
+// 내 스탬프·후기 + 도감 진행률과 배지 (로그인한 회원만)
 export default function Stamps() {
+  const user = useAppStore((s) => s.user)
   const nickname = useAppStore((s) => s.nickname)
-  const setNickname = useAppStore((s) => s.setNickname)
+  const authReady = useAppStore((s) => s.authReady)
   const stamps = useAppStore((s) => s.stamps)
   const loading = useAppStore((s) => s.stampsLoading)
   const loadStamps = useAppStore((s) => s.loadStamps)
   const removeStamp = useAppStore((s) => s.removeStamp)
-  const [draft, setDraft] = useState(nickname)
   const [list, setList] = useState([]) // 도감의 전체 분량을 세려고 행사 목록을 받는다
 
-  useEffect(() => { loadStamps() }, [nickname, loadStamps])
+  useEffect(() => { loadStamps() }, [user, loadStamps])
   useEffect(() => { fetchFestivals().then(setList).catch(() => {}) }, [])
 
   const col = useMemo(() => buildCollection(stamps, list), [stamps, list])
@@ -33,24 +33,33 @@ export default function Stamps() {
 
       {!isSupabaseReady && <Alert variant="warning">Supabase 설정(.env.local)이 필요해요.</Alert>}
 
-      <Form
-        className="mb-4"
-        onSubmit={(e) => { e.preventDefault(); if (draft.trim()) setNickname(draft) }}
-      >
-        <InputGroup>
-          <InputGroup.Text>닉네임</InputGroup.Text>
-          <Form.Control value={draft} maxLength={20} placeholder="예: 돌하르방" onChange={(e) => setDraft(e.target.value)} />
-          <Button type="submit" disabled={!draft.trim() || draft.trim() === nickname}>
-            {nickname ? '바꾸기' : '정하기'}
-          </Button>
-        </InputGroup>
-        <Form.Text className="text-secondary">로그인 없이 닉네임으로 내 스탬프를 구분해요. 남긴 후기는 다른 사람에게도 보여요.</Form.Text>
-      </Form>
+      {/* 저장된 로그인 상태를 확인하는 동안에는 '로그인하세요'를 보여주지 않는다 */}
+      {!authReady && <Spinner />}
 
-      {!nickname && <Alert variant="secondary">닉네임을 정하면 내 스탬프가 보여요.</Alert>}
-      {nickname && loading && <Spinner />}
+      {authReady && !user && (
+        <Card className="text-center p-3 mb-4">
+          <Card.Body>
+            <i className="bi bi-person-lock display-4 text-warning" />
+            <h5 className="mt-2">스탬프와 도감은 로그인 후에 이용할 수 있어요</h5>
+            <p className="text-secondary small mb-3">내 계정에 스탬프·후기·배지가 저장되어, 다른 기기에서도 이어서 모을 수 있어요.</p>
+            <div className="d-flex justify-content-center gap-2">
+              <Link to="/login" state={{ from: '/stamps' }} className="btn btn-primary">로그인</Link>
+              <Link to="/signup" state={{ from: '/stamps' }} className="btn btn-outline-primary">회원가입</Link>
+            </div>
+          </Card.Body>
+        </Card>
+      )}
 
-      {nickname && !loading && (
+      {user && (
+        <p className="small text-secondary mb-3">
+          <i className="bi bi-person-circle me-1 text-warning" /><strong className="text-body">{nickname}</strong>님의 스탬프 · {user.email}
+          <span className="d-block">남긴 후기는 이 닉네임으로 다른 사람에게도 보여요.</span>
+        </p>
+      )}
+
+      {user && loading && <Spinner />}
+
+      {user && !loading && (
         <>
           {/* ── 도감 ── */}
           <section className="mb-4">
@@ -110,7 +119,7 @@ export default function Stamps() {
       )}
 
       <Row xs={1} md={2} className="g-3 pb-5">
-        {stamps.map((s) => (
+        {user && stamps.map((s) => (
           <Col key={s.id}>
             <Card className="h-100">
               <Card.Body>

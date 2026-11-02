@@ -9,6 +9,7 @@ import WeatherBadge from '../components/WeatherBadge'
 import { fetchFestivals, fetchWeather } from '../api/client'
 import { overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
 import { GROUP_STYLE, GROUPS, THEMES, themesOf, typeOf } from '../lib/festivalMeta'
+import { useNeedLogin } from '../lib/useNeedLogin'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
@@ -46,17 +47,17 @@ export default function Festivals() {
   const [month, setMonth] = useState(0) // 0 = 전체 (달력에서는 1~12)
   const [limit, setLimit] = useState(PAGE) // 카드 목록에 보여줄 개수 (더 보기로 늘린다)
 
-  const nickname = useAppStore((s) => s.nickname)
   const stamps = useAppStore((s) => s.stamps)
   const loadStamps = useAppStore((s) => s.loadStamps)
   const saveStamp = useAppStore((s) => s.saveStamp)
-  const toast = useAppStore((s) => s.toast)
+  const user = useAppStore((s) => s.user)
+  const needLogin = useNeedLogin()
   const reviews = useAppStore((s) => s.reviews)
   const loadReviews = useAppStore((s) => s.loadReviews)
   const plan = useAppStore((s) => s.plan)
   const togglePlan = useAppStore((s) => s.togglePlan)
 
-  useEffect(() => { loadStamps() }, [nickname, loadStamps])
+  useEffect(() => { loadStamps() }, [user, loadStamps])
   useEffect(() => { loadReviews() }, [loadReviews])
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function Festivals() {
 
   const stampOf = (f) => stamps.find((s) => s.festival_id === String(f.id))
   const openStamp = (f) =>
-    nickname ? setStampTarget(f) : toast('먼저 "내 스탬프" 페이지에서 닉네임을 정해 주세요', 'warning')
+    user ? setStampTarget(f) : needLogin()
 
   return (
     <Container>

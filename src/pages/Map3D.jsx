@@ -10,6 +10,7 @@ import { distKm, driveMinutes, fmtKm } from '../lib/geo'
 import { SEASONS, seasonColor } from '../lib/jeju'
 import { fmtYmd, overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
 import { GROUPS, typeOf } from '../lib/festivalMeta'
+import { useNeedLogin } from '../lib/useNeedLogin'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
@@ -28,18 +29,18 @@ export default function Map3D() {
   const [selected, setSelected] = useState(params.get('festival')) // ?festival=ID 로 바로 선택
   const [stampTarget, setStampTarget] = useState(null)
 
-  const nickname = useAppStore((s) => s.nickname)
   const stamps = useAppStore((s) => s.stamps)
   const loadStamps = useAppStore((s) => s.loadStamps)
   const saveStamp = useAppStore((s) => s.saveStamp)
-  const toast = useAppStore((s) => s.toast)
+  const user = useAppStore((s) => s.user)
+  const needLogin = useNeedLogin()
   const plan = useAppStore((s) => s.plan)
   const togglePlan = useAppStore((s) => s.togglePlan)
   const clearPlan = useAppStore((s) => s.clearPlan)
   const reviews = useAppStore((s) => s.reviews)
   const loadReviews = useAppStore((s) => s.loadReviews)
 
-  useEffect(() => { loadStamps() }, [nickname, loadStamps])
+  useEffect(() => { loadStamps() }, [user, loadStamps])
   useEffect(() => { loadReviews() }, [loadReviews])
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export default function Map3D() {
 
   const stampOf = (f) => stamps.find((s) => s.festival_id === String(f.id))
   const openStamp = (f) =>
-    nickname ? setStampTarget(f) : toast('먼저 "내 스탬프" 페이지에서 닉네임을 정해 주세요', 'warning')
+    user ? setStampTarget(f) : needLogin()
 
   return (
     <Container>

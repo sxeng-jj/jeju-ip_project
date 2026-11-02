@@ -8,6 +8,7 @@ import { fetchFestival, fetchFestivals, fetchWeather } from '../api/client'
 import { fmtYmd, statusOf } from '../lib/date'
 import { GROUP_STYLE, isOutdoor, SOURCES, THEME_BY_KEY, themesOf, typeOf, typeText } from '../lib/festivalMeta'
 import { cityOf, forecastFor } from '../lib/weather'
+import { useNeedLogin } from '../lib/useNeedLogin'
 import { useAppStore } from '../store/useAppStore'
 
 const STATUS = { ongoing: ['success', '진행중'], upcoming: ['info', '예정'], ended: ['secondary', '종료'] }
@@ -44,17 +45,17 @@ export default function FestivalDetail() {
   const [error, setError] = useState('')
   const [stampTarget, setStampTarget] = useState(null)
 
-  const nickname = useAppStore((s) => s.nickname)
   const stamps = useAppStore((s) => s.stamps)
   const loadStamps = useAppStore((s) => s.loadStamps)
   const saveStamp = useAppStore((s) => s.saveStamp)
-  const toast = useAppStore((s) => s.toast)
+  const user = useAppStore((s) => s.user)
+  const needLogin = useNeedLogin()
   const reviews = useAppStore((s) => s.reviews)
   const loadReviews = useAppStore((s) => s.loadReviews)
   const plan = useAppStore((s) => s.plan)
   const togglePlan = useAppStore((s) => s.togglePlan)
 
-  useEffect(() => { loadStamps() }, [nickname, loadStamps])
+  useEffect(() => { loadStamps() }, [user, loadStamps])
   useEffect(() => { loadReviews() }, [loadReviews])
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function FestivalDetail() {
   const listItem = all.find((f) => f.id === id) // 목록 쪽 정보 (출처 간 일정 불일치 등)
   const review = reviews[id]
   const checklist = useMemo(() => (d ? buildChecklist(d, w) : []), [d, w])
-  const openStamp = () => (nickname ? setStampTarget({ id: d.id, title: d.title }) : toast('먼저 "내 스탬프" 페이지에서 닉네임을 정해 주세요', 'warning'))
+  const openStamp = () => (user ? setStampTarget({ id: d.id, title: d.title }) : needLogin())
 
   if (error) return <Container className="py-4"><Alert variant="danger">{error}</Alert><Link to="/festivals">← 목록으로</Link></Container>
   if (!d) return <Container className="py-5"><Spinner /></Container>
