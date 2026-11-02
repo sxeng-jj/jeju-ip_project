@@ -6,6 +6,7 @@ import FestivalDetail from './pages/FestivalDetail'
 import Stamps from './pages/Stamps'
 import Agent from './pages/Agent'
 import Login from './pages/Login'
+import ServiceStatus from './pages/ServiceStatus'
 import Signup from './pages/Signup'
 import NotFound from './pages/NotFound'
 
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'stamps', element: <Stamps /> },
       { path: 'agent', element: <Agent /> },
       { path: 'login', element: <Login /> },
+      { path: 'status', element: <ServiceStatus /> },
       { path: 'signup', element: <Signup /> },
     ],
   },

@@ -56,6 +56,7 @@ export default function RootLayout() {
 
       <footer className="festa-footer text-center text-secondary small py-4 mt-5">
         데이터: 한국관광공사 · 한국문화정보원 · 기상청 · 지자체 문화축제 (공공데이터포털)
+        <Link to="/status" className="ms-2 text-secondary">서비스 상태</Link>
       </footer>
 
       <div className="toast-stack">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Alert, Button, ButtonGroup, Col, Container, Form, Row, Spinner } from 'react-bootstrap'
 import PageHeader from '../components/PageHeader'
 import Chips from '../components/Chips'
@@ -26,6 +27,9 @@ const PAGE = 24
 export default function Festivals() {
   const today = todayYmd()
   const thisYear = Number(today.slice(0, 4))
+  const [params] = useSearchParams()
+  const pick = (key, allowed, fallback = 'all') => (allowed.includes(params.get(key)) ? params.get(key) : fallback)
+  const startCalendar = params.get('view') === 'calendar'
 
   const [list, setList] = useState([])
   const [weather, setWeather] = useState({})
@@ -35,16 +39,16 @@ export default function Festivals() {
   const [stampTarget, setStampTarget] = useState(null)
 
   // 필터 상태
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => (params.get('q') ?? '').slice(0, 50))
   const [city, setCity] = useState('all') // all | 제주시 | 서귀포시
   const [area, setArea] = useState('all') // all | 읍·면 이름
-  const [group, setGroup] = useState('all') // all | 축제 | 공연 | 행사
-  const [status, setStatus] = useState('all')
-  const [theme, setTheme] = useState('all') // all | 테마 key
+  const [group, setGroup] = useState(() => pick('group', GROUPS)) // all | 축제 | 공연 | 전시 | 행사
+  const [status, setStatus] = useState(() => pick('status', ['ongoing', 'upcoming', 'ended']))
+  const [theme, setTheme] = useState(() => pick('theme', THEMES.map((t) => t.key))) // all | 테마 key
   // 보기 상태
-  const [view, setView] = useState('list') // list | calendar
+  const [view, setView] = useState(startCalendar ? 'calendar' : 'list') // list | calendar
   const [year, setYear] = useState(thisYear)
-  const [month, setMonth] = useState(0) // 0 = 전체 (달력에서는 1~12)
+  const [month, setMonth] = useState(startCalendar ? Number(today.slice(4, 6)) : 0) // 0 = 전체 (달력에서는 1~12)
   const [limit, setLimit] = useState(PAGE) // 카드 목록에 보여줄 개수 (더 보기로 늘린다)
 
   const stamps = useAppStore((s) => s.stamps)
