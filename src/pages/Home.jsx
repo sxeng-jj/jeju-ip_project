@@ -59,12 +59,13 @@ export default function Home() {
     <Container className="pb-4">
       {/* ── 첫 화면 ── */}
       <section className="festa-hero">
-        <Row className="align-items-center g-3">
-          <Col md={7} className="text-center text-md-start">
-        <h1 className="display-5">제주의 축제·공연·전시, 한눈에</h1>
+        <div className="hero-banner">
+          <HeroScene />
+        </div>
+        <h1 className="display-5 mt-4">제주의 축제·공연·전시, 한눈에</h1>
         <p className="lead text-secondary mb-4">지금 열리는 행사부터 이번 달 일정까지. 지도로 찾고 스탬프를 모아요.</p>
 
-        <Form onSubmit={search} className="mx-auto mx-md-0" style={{ maxWidth: 560 }}>
+        <Form onSubmit={search} className="mx-auto" style={{ maxWidth: 560 }}>
           <InputGroup size="lg">
             <Form.Control
               type="search"
@@ -77,16 +78,11 @@ export default function Home() {
           </InputGroup>
         </Form>
 
-        <div className="d-flex flex-wrap justify-content-center justify-content-md-start gap-2 mt-3">
+        <div className="d-flex flex-wrap justify-content-center gap-2 mt-3">
           <Link to="/festivals" className="btn btn-outline-primary"><i className="bi bi-grid me-1" />전체 일정</Link>
           <Link to="/festivals?view=calendar" className="btn btn-outline-primary"><i className="bi bi-calendar3 me-1" />이번 달 달력</Link>
           <Link to="/map" className="btn btn-outline-primary"><i className="bi bi-map me-1" />지도</Link>
         </div>
-      </Col>
-          <Col md={5}>
-            <HeroScene />
-          </Col>
-        </Row>
       </section>
 
       {/* ── 오늘 날씨 ── */}

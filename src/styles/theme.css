@@ -127,7 +127,7 @@ a { text-underline-offset: 2px; }
 /* ── 페이지 머리말·홈 ── */
 .page-title i { color: var(--jeju-orange); }
 .festa-hero {
-  padding: 2.5rem 1rem 2rem;
+  padding: 1.25rem 1rem 2rem;
   text-align: center;
   background: linear-gradient(180deg, var(--jeju-green-50), transparent);
   border-radius: 0 0 2rem 2rem;
@@ -234,14 +234,34 @@ button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink);
 
 /* 3D 배지 진열장 */
 .shelf3d { height: 400px; border-radius: 1rem; overflow: hidden; border: 1px solid var(--jeju-line); background: #f7efe0; }
+.badge-unlock { border: 0; border-radius: 1.25rem; overflow: hidden; background: linear-gradient(#fff8e8, #fff); }
+.badge-unlock-kicker { font-weight: 800; color: var(--jeju-green-dark); font-size: 1.1rem; margin-top: 0.5rem; }
+.badge-unlock-stage { height: 280px; margin: 0.25rem 0; }
+.badge-unlock-emoji { font-size: 6rem; line-height: 280px; }
 .shelf-label { font-size: 0.72rem; font-weight: 700; color: var(--jeju-green-dark); background: rgba(255, 255, 255, 0.9); padding: 0.1rem 0.5rem; border-radius: 0.5rem; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
 
-/* 홈 첫 화면의 3D 제주 장식 */
-.hero-scene { position: relative; height: 330px; }
-.hero-scene::before {
-  content: ''; position: absolute; inset: 6% 4%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(240, 138, 23, 0.16), rgba(31, 107, 69, 0.08) 58%, transparent 72%);
+/* 홈 첫 화면: 귤이 제주를 여행하는 애니메이션 배너 */
+.hero-banner { border-radius: 1.25rem; overflow: hidden; box-shadow: 0 6px 22px rgba(22, 74, 48, 0.18); border: 1px solid var(--jeju-line); background: #d4eef7; }
+.story { position: relative; height: 400px; background: #d4eef7; }
+.story canvas { display: block; }
+.story-plain { background: linear-gradient(180deg, #d4eef7, #fff2dd); }
+.story-caption {
+  position: absolute; left: 1rem; bottom: 1rem; max-width: calc(100% - 9.5rem);
+  background: rgba(255, 255, 255, 0.92); color: var(--jeju-green-dark); font-weight: 700; font-size: 0.95rem;
+  padding: 0.35rem 0.95rem; border-radius: 2rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
-.hero-scene canvas { position: relative; touch-action: pan-y; } /* 세로 스크롤은 막지 않는다 */
-@media (max-width: 767.98px) { .hero-scene { height: 240px; } }
-@media (min-width: 768px) { .festa-hero h1::after { margin-left: 0; } }
+.story-controls { position: absolute; right: 1rem; bottom: 1rem; display: flex; gap: 0.5rem; }
+.story-bubble {
+  position: relative; background: #fff; color: var(--jeju-green-dark); font-weight: 800; font-size: 1rem; line-height: 1.35;
+  padding: 0.55rem 0.95rem; border-radius: 1.1rem; text-align: center; white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25); border: 2px solid var(--jeju-orange);
+}
+.story-bubble::after { /* 말풍선 꼬리 */
+  content: ''; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; background: #fff;
+  border-right: 2px solid var(--jeju-orange); border-bottom: 2px solid var(--jeju-orange); transform: translateX(-50%) rotate(45deg);
+}
+.story-sign { font-weight: 800; font-size: 0.95rem; color: #fff; white-space: nowrap; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
+@media (max-width: 767.98px) {
+  .story { height: 300px; }
+  .story-caption { font-size: 0.8rem; max-width: calc(100% - 7.5rem); padding: 0.3rem 0.7rem; }
+}

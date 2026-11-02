@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translateAuthError } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
+import { fetchFestivals } from '../api/client'
+import { buildCollection } from '../lib/badges'
 
 const NO_DB = 'Supabase 설정(.env.local)이 필요해요'
 const NEED_LOGIN = '스탬프는 로그인 후에 찍을 수 있어요'
@@ -97,10 +99,25 @@ export const useAppStore = create(
         const { data, error } = await supabase
           .from('stamps').upsert(row, { onConflict: 'user_id,festival_id' }).select().single()
         if (error) return toast(error.message, 'danger')
-        set({ stamps: [data, ...get().stamps.filter((s) => s.id !== data.id)] })
+        const before = get().stamps
+        set({ stamps: [data, ...before.filter((s) => s.id !== data.id)] })
         toast('스탬프를 찍었어요!')
         get().loadReviews()
+        get().checkNewBadges(before)
         return data
+      },
+
+      // 새로 얻은 배지 (큰 알림창에 하나씩 보여 준다)
+      unlocked: [],
+      dismissUnlocked: () => set({ unlocked: get().unlocked.slice(1) }),
+      // 스탬프를 찍기 전과 후의 배지를 비교해, 이번에 새로 ok 가 된 것만 알림창 대기열에 넣는다
+      checkNewBadges: async (beforeStamps) => {
+        try {
+          const list = await fetchFestivals()
+          const had = new Set(buildCollection(beforeStamps, list).badges.filter((b) => b.ok).map((b) => b.key))
+          const fresh = buildCollection(get().stamps, list).badges.filter((b) => b.ok && !had.has(b.key))
+          if (fresh.length) set({ unlocked: [...get().unlocked, ...fresh] })
+        } catch { /* 목록을 못 받으면 알림만 건너뛴다 */ }
       },
 
       // 모두의 후기 — 축제별 평균 별점·후기 목록 (stamps 테이블에서 별점이나 후기가 있는 행)

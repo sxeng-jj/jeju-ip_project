@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Button, Container, Nav, Navbar, Toast } from 'react-bootstrap'
 import { NAV_ITEMS } from '../router'
+import BadgeUnlock from '../components/BadgeUnlock'
 import { useAppStore } from '../store/useAppStore'
 
 export default function RootLayout() {
@@ -58,6 +59,8 @@ export default function RootLayout() {
         데이터: 한국관광공사 · 한국문화정보원 · 기상청 · 지자체 문화축제 (공공데이터포털)
         <Link to="/status" className="ms-2 text-secondary">서비스 상태</Link>
       </footer>
+
+      <BadgeUnlock />
 
       <div className="toast-stack">
         {toasts.map((t) => (
