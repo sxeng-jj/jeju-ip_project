@@ -54,7 +54,7 @@ const ICON_DRAWINGS = {
   ),
 }
 
-function Actor({ reg, icons, sparkCount = 30 }) {
+function Actor({ reg, icons }) {
   const r = rng(7)
   const dots = Array.from({ length: 46 }, () => {
     const a = r() * Math.PI * 2
@@ -75,6 +75,15 @@ function Actor({ reg, icons, sparkCount = 30 }) {
           </g>
         ))}
 
+        {/* 여행용 배낭 (몸통 뒤로 삐져나온다) */}
+        <g ref={reg('bag')}>
+          <rect x="-4" y="-42" width="50" height="76" rx="16" fill="#3f7d4e" stroke="#2a5a38" strokeWidth="2.4" />
+          <rect x="10" y="2" width="30" height="26" rx="8" fill="#5a9a52" stroke="#2a5a38" strokeWidth="2" />
+          <path d="M14 -46 q10 -12 20 0" stroke="#2a5a38" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <circle cx="25" cy="15" r="3.6" fill="#f08a17" />
+          <path d="M2 -26 h40" stroke="#f08a17" strokeWidth="5" strokeLinecap="round" />
+        </g>
+
         {/* 둥글고 약간 납작한 몸통 + 과피 점무늬 */}
         <ellipse rx={RX} ry={RY} fill="url(#gTang)" stroke="#c9590a" strokeOpacity="0.5" strokeWidth="1.6" />
         {dots.map(([x, y, rr, o], i) => <circle key={i} cx={x.toFixed(1)} cy={y.toFixed(1)} r={rr.toFixed(1)} fill="#c75a0a" opacity={o} />)}
@@ -92,7 +101,8 @@ function Actor({ reg, icons, sparkCount = 30 }) {
 
         {/* 변신 뒤에만 나타나는 부분들 */}
         <g ref={reg('strap')} opacity="0">
-          <path d={`M${-RX + 18} ${-RY + 12} C-10 -6 20 18 ${RX - 12} 26`} stroke="#8b5a2b" strokeWidth="7" fill="none" strokeLinecap="round" />
+          <path d={`M-30 ${-RY + 6} C-38 -14 -38 8 -34 28 M30 ${-RY + 6} C38 -14 38 8 34 28`} stroke="#2f6b45" strokeWidth="8" fill="none" strokeLinecap="round" />
+          <path d="M-35 6 H35" stroke="#2f6b45" strokeWidth="4" strokeLinecap="round" />
         </g>
         <g ref={reg('cheeks')}>
           <circle cx="-30" cy="10" r="9" fill="#f26b5b" opacity="0.5" />
@@ -112,24 +122,44 @@ function Actor({ reg, icons, sparkCount = 30 }) {
         <path ref={reg('armR')} stroke={INK} strokeWidth="5" strokeLinecap="round" fill="none" />
         <circle ref={reg('handL')} r="6.5" fill={INK} />
         <circle ref={reg('handR')} r="6.5" fill={INK} />
-        <g ref={reg('bag')}>
-          <rect x="-15" y="-12" width="30" height="26" rx="7" fill="#a86a32" stroke="#7a4a20" strokeWidth="2" />
-          <path d="M-15 -4 Q0 8 15 -4 V-9 Q0 -1 -15 -9Z" fill="#8b5a2b" />
-          <circle cx="0" cy="2" r="3.4" fill="#f08a17" />
+        {/* 관광 차림: 목에 건 카메라 */}
+        <g ref={reg('camera')}>
+          <path d="M-14 -22 L-18 -44 M14 -22 L18 -44" stroke="#8b5a2b" strokeWidth="4" strokeLinecap="round" />
+          <rect x="-20" y="-13" width="40" height="27" rx="6" fill="#3b4a52" stroke="#222c31" strokeWidth="2" />
+          <rect x="-12" y="-19" width="14" height="8" rx="3" fill="#3b4a52" stroke="#222c31" strokeWidth="2" />
+          <circle cx="2" cy="1" r="10" fill="#222c31" />
+          <circle cx="2" cy="1" r="6.5" fill="#8fd3ea" />
+          <circle cx="0" cy="-1.5" r="2" fill="#fff" opacity="0.9" />
+          <circle cx="14" cy="-7" r="2.4" fill="#f08a17" />
         </g>
-        <g ref={reg('hat')}>
-          <ellipse cx="0" cy="0" rx="40" ry="9.5" fill="#5f8734" stroke="#44641f" strokeWidth="1.6" />
-          <path d="M-26 -1 C-26 -34 26 -34 26 -1Z" fill="#7aa043" stroke="#44641f" strokeWidth="1.6" />
-          <path d="M-26.5 -6 H26.5 L26 -1 H-26Z" fill="#f08a17" />
-          <path d="M-12 -24 C-4 -30 8 -30 14 -24" stroke="#a9c46a" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7" />
+        {/* 챙이 넓은 밀짚모자 */}
+        <g ref={reg('hat')} opacity="0">
+          <ellipse cx="0" cy="0" rx="56" ry="12.5" fill="#e8c97a" stroke="#b8914a" strokeWidth="2" />
+          <path d="M-28 -2 C-28 -40 28 -40 28 -2Z" fill="#f0d98e" stroke="#b8914a" strokeWidth="2" />
+          <path d="M-28.5 -9 H28.5 L28 -2 H-28Z" fill="#f08a17" />
+          <path d="M26 -6 q16 6 20 20 M26 -4 q10 8 8 22" stroke="#f08a17" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M-46 3 q46 14 92 0" stroke="#c9a458" strokeWidth="1.6" fill="none" opacity="0.7" />
+          <path d="M-14 -28 C-6 -35 8 -35 16 -28" stroke="#fff3c4" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.8" />
         </g>
       </g>
 
-      {/* 모여들었다 터지는 금빛 반짝임 */}
-      <g>
-        {Array.from({ length: sparkCount }, (_, i) => (
-          <path key={i} ref={reg(`sp${i}`)} d="M0 -9 Q1.5 -1.5 9 0 Q1.5 1.5 0 9 Q-1.5 1.5 -9 0 Q-1.5 -1.5 0 -9Z" fill={i % 3 ? '#ffd45a' : '#fff2b0'} opacity="0" />
-        ))}
+      {/* 신나서 들썩일 때: 터지는 선과 떠오르는 음표 (굴러서 흔들리는 게 아니라 신난 것임을 보여 준다) */}
+      <g ref={reg('joy')}>
+        <g ref={reg('joyLines')} opacity="0" stroke="#f08a17" strokeWidth="6" strokeLinecap="round">
+          {[-160, -130, -100, -70, -40, -10].map((a, i) => {
+            const r = (a * Math.PI) / 180
+            const r0 = 70 + (i % 2) * 6
+            return <path key={a} d={`M${(Math.cos(r) * r0).toFixed(1)} ${(Math.sin(r) * r0).toFixed(1)} L${(Math.cos(r) * (r0 + 30)).toFixed(1)} ${(Math.sin(r) * (r0 + 30)).toFixed(1)}`} stroke={i % 2 ? '#2f6b45' : '#f08a17'} />
+          })}
+        </g>
+        {['n1', 'n2'].map((k) => <text key={k} ref={reg(k)} opacity="0" fontSize="44" fontWeight="800" fill="#2f6b45" stroke="#fff" strokeWidth="5" paintOrder="stroke">♪</text>)}
+      </g>
+
+      {/* 기분을 말하는 말풍선 */}
+      <g ref={reg('bubble')} opacity="0">
+        <rect ref={reg('bubbleBox')} x="-80" y="-34" width="160" height="62" rx="31" fill="#fffaf0" stroke="#2f6b45" strokeWidth="4" />
+        <g ref={reg('bubbleTail')}><path d="M-12 26 L10 58 L16 26" fill="#fffaf0" stroke="#2f6b45" strokeWidth="4" strokeLinejoin="round" /><path d="M-9 25 H14" stroke="#fffaf0" strokeWidth="6" /></g>
+        <text ref={reg('bubbleText')} x="0" y="9" textAnchor="middle" fontSize="30" fontWeight="800" fill="#1f6b45" />
       </g>
 
       {/* 활동 아이콘 */}

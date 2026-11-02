@@ -1,5 +1,5 @@
 import {
-  CH, GROUND, ICONS, PIVOT, RX, RY, T_FALL,
+  CH, GROUND, ICONS, PIVOT, RX, RY, T_FALL, joyAt, stand,
   camXAt, camYAt, iconState, lerp, lookAt, pop, rotAt, skyAt, smooth, squashAt, sunY, warmthAt, xAt, yAt, zoomAt,
 } from './intro'
 
@@ -71,24 +71,25 @@ export function renderFrame(el, t, vbW) {
     el.stem.style.display = ''
   } else el.stem.style.display = 'none'
 
-  // 변신: 눈 → 입 → 볼 → 다리 → 팔 → 모자 → 가방 순서로 튀어나온다
-  const p = (k) => pop((t - CH[k]) / 0.45)
+  // 일어서기: 웅크렸다가 다리가 자라며 몸이 일어서고 → 눈을 뜨고 → 팔을 뻗고 → 모자를 쓰고 → 가방을 메고 → 카메라를 건다
+  const ease = (k, d = 0.5) => 1 - (1 - Math.min(1, Math.max(0, (t - CH[k]) / d))) ** 3
+  const p = (k) => pop((t - CH[k]) / 0.5)
   const scale = (g, s, tx = 0, ty = 0, rot = 0) => g.setAttribute('transform', `translate(${tx} ${ty}) rotate(${rot}) scale(${Math.max(0.0001, s).toFixed(3)})`)
   const blink = 1 - 0.92 * bump(t % 3.4, 3.3, 0.1)
-  el.eyes.setAttribute('transform', `translate(0 -4) scale(${Math.max(0.0001, p('eyes')).toFixed(3)} ${(Math.max(0.0001, p('eyes')) * blink).toFixed(3)})`)
-  scale(el.mouth, p('mouth'), 0, 14)
-  scale(el.cheeks, p('cheek'), 0, 0)
+  el.eyes.setAttribute('transform', `translate(0 -4) scale(1 ${Math.max(0.0001, ease('eyes', 0.45) * blink).toFixed(3)})`) // 눈을 뜬다
+  scale(el.mouth, ease('mouth', 0.3), 0, 14)
+  scale(el.cheeks, ease('cheek', 0.4), 0, 0)
   el.mouthOpen.setAttribute('opacity', smooth(37.7, 38.1, t).toFixed(2))
-  const pl = p('legs')
-  ;[['legL', -22], ['legR', 22]].forEach(([k, lx]) => el[k].setAttribute('transform', `translate(${lx} ${RY - 4}) scale(1 ${Math.max(0.0001, pl).toFixed(3)})`))
+  const st = Math.max(0.0001, stand(t))
+  ;[['legL', -22], ['legR', 22]].forEach(([k, lx]) => el[k].setAttribute('transform', `translate(${lx} ${RY - 4}) scale(1 ${st.toFixed(3)})`))
 
-  const pa = Math.max(0.0001, p('arms'))
+  const pa = Math.max(0.0001, ease('arms', 0.7))
   const sh = [[-RX + 9, 8, 118, 'L'], [RX - 9, 8, 62, 'R']]
   sh.forEach(([sx0, sy0, down, side]) => {
     let a = down
     if (side === 'R') {
-      const up = smooth(37.0, 37.6, t)
-      a = lerp(62, -52, up) + Math.sin(Math.max(0, t - 37.6) * 9) * 20 * up // 손 흔들기
+      const up = smooth(36.4, 36.9, t)
+      a = lerp(62, -52, up) + Math.sin(Math.max(0, t - 36.9) * 9) * 20 * up // 손 흔들기
     } else a = lerp(118, 128, Math.sin(t * 2) * 0.5 + 0.5)
     const len = 44 * pa
     const ex = sx0 + Math.cos(rad(a)) * len
@@ -96,27 +97,35 @@ export function renderFrame(el, t, vbW) {
     el[`arm${side}`].setAttribute('d', `M${fx(sx0)} ${fx(sy0)} L${fx(ex)} ${fx(ey)}`)
     el[`hand${side}`].setAttribute('transform', `translate(${fx(ex)} ${fx(ey)}) scale(${Math.min(1, pa).toFixed(2)})`)
   })
-  scale(el.hat, p('hat'), -22, -RY + 10, -12)
+  // 챙 넓은 모자는 위에서 톡 떨어져 머리에 앉고, 배낭과 카메라는 튀어나오듯 걸린다
+  el.hat.setAttribute('opacity', t >= CH.hat ? 1 : 0)
+  el.hat.setAttribute('transform', `translate(-20 ${fx(-RY + 8 - 120 * (1 - p('hat')))}) rotate(-10)`)
   const pb = p('bag')
-  scale(el.bag, pb, RX - 8, 26)
+  scale(el.bag, pb, RX - 6, 6)
   el.strap.setAttribute('opacity', Math.min(1, Math.max(0, pb)).toFixed(2))
+  scale(el.camera, p('camera'), 8, 38)
 
-  // 금빛 반짝임: 34~35초에 귤 가운데로 모였다가 35~36.4초에 사방으로 터진다
-  const cxs = x
-  const cys = GROUND - RY - 20
-  const gather = smooth(34.0, 35.0, t)
-  const burst = smooth(35.0, 36.4, t)
-  for (let i = 0; i < 30; i++) {
-    const g = el[`sp${i}`]
-    if (!g) continue
-    const a = i * 2.399 + t * 0.6 * (1 - burst)
-    const r0 = 240 + ((i * 37) % 210)
-    const radius = t < 35.0 ? r0 * (1 - gather * gather) : burst * (70 + ((i * 53) % 170))
-    const op = t < 35.0 ? gather : 1 - burst
-    const s = 0.7 + ((i * 7) % 5) * 0.25
-    g.setAttribute('transform', `translate(${fx(cxs + Math.cos(a) * radius)} ${fx(cys + Math.sin(a) * radius * 0.8)}) scale(${(s * (0.5 + 0.5 * op)).toFixed(2)})`)
-    g.setAttribute('opacity', op.toFixed(2))
+  // 신나서 들썩이는 표시 (뛸 때 터지는 선, 떠오르는 음표, 말풍선)
+  const joy = joyAt(t)
+  el.joy.setAttribute('transform', `translate(${fx(x)} ${fx(y - RY - 6)})`)
+  el.joyLines.setAttribute('opacity', joy.burst.toFixed(2))
+  el.joyLines.setAttribute('transform', `scale(${(0.85 + 0.45 * joy.burst).toFixed(2)})`)
+  ;['n1', 'n2'].forEach((k, i) => {
+    const ph = (t * 1.3 + i * 0.5) % 1
+    el[k].setAttribute('transform', `translate(${i ? 70 : -80} ${fx(-60 - 110 * ph)}) rotate(${i ? 14 : -14})`)
+    el[k].setAttribute('opacity', (joy.notes * Math.sin(Math.PI * ph)).toFixed(2))
+  })
+  if (joy.text && el.bubbleText.textContent !== joy.text) {
+    el.bubbleText.textContent = joy.text
+    const w = Math.max(120, joy.text.length * 25 + 44)
+    el.bubbleBox.setAttribute('width', w)
+    el.bubbleBox.setAttribute('x', -w / 2)
+    el.bubbleTail.setAttribute('transform', `translate(${fx(w / 2 - 46)} 0)`)
   }
+  const bw = el.bubbleBox ? Number(el.bubbleBox.getAttribute('width')) : 160
+  el.bubble.setAttribute('opacity', Math.min(1, joy.bubble * 1.5).toFixed(2))
+  el.bubble.setAttribute('transform', `translate(${fx(x - 40 - bw / 2)} ${GROUND - 262 - 14 * (1 - joy.bubble)}) scale(${(0.7 + 0.3 * joy.bubble).toFixed(3)})`)
+
 
   // 활동 아이콘 (귤 앞쪽 위에 작게, 귤을 가리지 않는다)
   for (const ic of ICONS) {

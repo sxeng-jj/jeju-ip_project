@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Alert, Button, Card, Col, Container, Form, InputGroup, Row, Spinner } from 'react-bootstrap'
 import FestivalCard from '../components/FestivalCard'
@@ -10,14 +10,6 @@ import { GROUP_STYLE, GROUPS, THEMES, typeOf } from '../lib/festivalMeta'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
-const INTRO_SEEN = 'jeju-intro-seen'
-const IntroOverlay = lazy(() => import('../components/IntroOverlay'))
-// 불러오는 동안 보여 줄 화면 (IntroOverlay 와 같은 덩어리가 아니라 가볍게 따로 둔다)
-const IntroLoading = () => (
-  <div className="gj-overlay d-flex align-items-center justify-content-center" role="status" aria-label="소개 영상을 불러오는 중">
-    <Spinner />
-  </div>
-)
 
 // 방문자가 처음 보는 화면: 검색 → 지금 볼 만한 행사 → 이번 달 → 관심사 → 내 스탬프
 export default function Home() {
@@ -58,23 +50,12 @@ export default function Home() {
   const thisMonth = useMemo(() => list.filter((f) => overlapsMonth(f, year, month)), [list, year, month])
   const countOf = (g) => thisMonth.filter((f) => typeOf(f).group === g).length
 
-  // 이 탭에서 처음 홈에 들어오면 인트로를 자동 재생한다 (한 번 본 뒤에는 '다시 보기'로만)
-  const [intro, setIntro] = useState(() => {
-    try { return !sessionStorage.getItem(INTRO_SEEN) } catch { return true }
-  })
-  const closeIntro = useCallback(() => {
-    try { sessionStorage.setItem(INTRO_SEEN, '1') } catch { /* 저장이 안 돼도 보는 데는 문제없다 */ }
-    setIntro(false)
+  // 배너의 인트로 버튼: 검색창으로 안내한다
+  const focusSearch = useCallback(() => {
+    const box = document.getElementById('home-search')
+    box?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    box?.focus({ preventScroll: true })
   }, [])
-  // 인트로의 버튼: 검색창으로 안내한다
-  const startFromIntro = useCallback(() => {
-    closeIntro()
-    setTimeout(() => {
-      const box = document.getElementById('home-search')
-      box?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      box?.focus({ preventScroll: true })
-    }, 50)
-  }, [closeIntro])
 
   const search = (e) => {
     e.preventDefault()
@@ -83,15 +64,10 @@ export default function Home() {
 
   return (
     <Container className="pb-4">
-      {intro && (
-        <Suspense fallback={<IntroLoading />}>
-          <IntroOverlay onClose={closeIntro} onStart={startFromIntro} />
-        </Suspense>
-      )}
       {/* ── 첫 화면 ── */}
       <section className="festa-hero">
         <div className="hero-banner">
-          <HeroScene onReplay={() => setIntro(true)} />
+          <HeroScene onStart={focusSearch} />
         </div>
         <h1 className="display-5 mt-4">제주의 축제·공연·전시, 한눈에</h1>
         <p className="lead text-secondary mb-4">지금 열리는 행사부터 이번 달 일정까지. 지도로 찾고 스탬프를 모아요.</p>

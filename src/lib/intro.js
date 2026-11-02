@@ -8,7 +8,7 @@ export const SCENES = [
   { key: 'orchard', name: '감귤밭', from: 0, to: 7 },
   { key: 'wall', name: '돌담길', from: 7, to: 11 },
   { key: 'canola', name: '유채꽃과 한라산', from: 11, to: 16 },
-  { key: 'sea', name: '제주 바다', from: 16, to: 21 },
+  { key: 'sea', name: '와~ 바다다! 속이 뻥 뚫려요', from: 16, to: 21 },
   { key: 'haenyeo', name: '해녀의 바다', from: 21, to: 25 },
   { key: 'festival', name: '제주 축제', from: 25, to: 30 },
   { key: 'sunset', name: '노을 해변', from: 30, to: 34 },
@@ -55,15 +55,17 @@ const D1 = (2 * V1) / G
 const D2 = (2 * V2) / G
 export const LANDINGS = [T_LAND, T_LAND + D1, T_LAND + D1 + D2]
 
-// 변신 장면의 순서
-export const CH = { eyes: 35.0, mouth: 35.15, cheek: 35.25, legs: 35.3, arms: 35.45, hat: 35.7, bag: 35.95 }
-const HOPS = [
-  { t0: 35.0, d: 0.7, h: 90 },
-  { t0: 35.7, d: 0.6, h: 50 },
-  { t0: 36.3, d: 0.45, h: 22 },
-]
-HOPS.forEach((h) => LANDINGS.push(h.t0 + h.d))
+// 영상 전체를 이 배율로 빠르게 재생한다 (줄거리의 초 단위는 그대로 두고 시계만 빠르게 돌린다)
+export const SPEED = 1.5
+
+// 멈춘 귤이 '일어서는' 장면의 순서: 웅크렸다가 다리가 자라며 몸이 일어서고 → 눈을 뜨고 → 팔을 뻗고 → 모자를 쓰고 → 가방을 메고 → 카메라를 건다
+export const STAND = { from: 34.4, dur: 1.1 }
+export const CH = { eyes: 35.1, mouth: 35.5, cheek: 35.6, arms: 35.3, hat: 35.9, bag: 36.3, camera: 36.6 }
 export const LEG_LEN = 40
+export const stand = (t) => {
+  const u = clamp01((t - STAND.from) / STAND.dur)
+  return 1 - (1 - u) ** 3 // 빠르게 일어나 천천히 자리 잡는다
+}
 
 // 매달려 흔들리는 각도 (떨어지기 직전에 점점 세게)
 const sway = (t) => {
@@ -107,7 +109,6 @@ export function rotAt(t) {
 }
 
 export const heightAt = (th) => Math.hypot(RX * Math.sin(th), RY * Math.cos(th)) // 중심에서 바닥까지 (타원이라 회전에 따라 달라진다)
-const arc = (u) => 4 * u * (1 - u)
 
 // 바닥에서 떠오른 높이: 통통 튐 + 작은 돌 + 파도 + 북소리 박자 + 변신 뒤 폴짝 + 다리가 자라며 올라옴
 export function liftAt(t) {
@@ -124,14 +125,10 @@ export function liftAt(t) {
   const dw = (x - WAVE_HOP.x) / 62
   if (Math.abs(dw) < 1) h += WAVE_HOP.h * (1 - dw * dw)
   if (t > 25.3 && t < 29.8) {
-    const amp = 14 * smooth(25.3, 25.9, t) * (1 - smooth(29.0, 29.8, t))
-    h += amp * Math.sin(Math.PI * (((t - 25) / 0.5) % 1)) // 0.5초(120BPM) 박자에 맞춰 살짝 뜀
+    const amp = 26 * smooth(25.3, 25.9, t) * (1 - smooth(29.0, 29.8, t))
+    h += amp * Math.sin(Math.PI * (((t - 25) / 0.5) % 1)) // 0.5초(120BPM) 박자에 맞춰 신나게 뜀
   }
-  for (const hop of HOPS) {
-    const u = (t - hop.t0) / hop.d
-    if (u > 0 && u < 1) h += hop.h * arc(u)
-  }
-  h += LEG_LEN * pop((t - CH.legs) / 0.6)
+  h += LEG_LEN * stand(t)
   return h
 }
 
@@ -150,12 +147,45 @@ export function squashAt(t) {
       return { sx: 1 + 0.13 * k, sy: 1 - 0.16 * k }
     }
   }
-  const u = (t - 34.55) / 0.45 // 변신 직전 웅크림
-  if (u > 0 && u < 1) {
-    const k = Math.sin(Math.PI * u)
-    return { sx: 1 + 0.1 * k, sy: 1 - 0.12 * k }
+  if (t > 25.3 && t < 29.8) { // 신나게 뛸 때 박자마다 착지하며 납작해졌다 늘어난다
+    const ph = ((t - 25) / 0.5) % 1
+    if (ph < 0.2) {
+      const k = Math.sin((Math.PI * ph) / 0.2)
+      return { sx: 1 + 0.12 * k, sy: 1 - 0.15 * k }
+    }
+  }
+  const c = (t - (STAND.from - 0.5)) / 0.5 // 일어서기 전에 한 번 웅크린다
+  if (c > 0 && c < 1) {
+    const k = Math.sin(Math.PI * c)
+    return { sx: 1 + 0.1 * k, sy: 1 - 0.14 * k }
+  }
+  const r = (t - STAND.from) / STAND.dur // 일어서며 위로 쭉 늘어난다
+  if (r > 0 && r < 1) {
+    const k = Math.sin(Math.PI * r)
+    return { sx: 1 - 0.04 * k, sy: 1 + 0.06 * k }
   }
   return { sx: 1, sy: 1 }
+}
+
+// 신나서 들썩이는 표시: 뛰어오를 때마다 터지는 선, 떠오르는 음표, 말풍선 (굴러서 흔들리는 게 아니라 신나서 뛰는 것임을 분명히 보여 준다)
+const BUBBLES = [
+  { from: 17.0, to: 20.4, text: '와~ 시원해!' },
+  { from: 25.6, to: 29.6, text: '신나! ♪' },
+]
+export function joyAt(t) {
+  let burst = 0
+  let notes = 0
+  if (t > 25.3 && t < 29.8) {
+    const ph = ((t - 25) / 0.5) % 1
+    const on = smooth(25.3, 25.6, t) * (1 - smooth(29.3, 29.8, t))
+    burst = Math.max(0, 1 - ph * 2.2) * on
+    notes = on
+  }
+  const dw = Math.abs(xAt(t) - WAVE_HOP.x) // 파도 앞에서 폴짝 뛸 때도 '앗!' 하는 표시
+  if (dw < 62) burst = Math.max(burst, 1 - dw / 62)
+  const b = BUBBLES.find((x) => t >= x.from && t < x.to)
+  const bubble = b ? smooth(b.from, b.from + 0.35, t) * (1 - smooth(b.to - 0.4, b.to, t)) : 0
+  return { burst, notes, bubble, text: b?.text ?? '' }
 }
 
 // ── 카메라 ──
@@ -228,7 +258,7 @@ export const SFX = {
   splash: 20.7,
   bubbles: 21.6,
   drums: Array.from({ length: 10 }, (_, i) => 25.5 + i * 0.5),
-  chimes: [34.2, 34.5, 34.8, 35.1],
-  boings: HOPS.map((h) => h.t0),
+  chimes: [35.1, 35.6, 36.0, 36.4],
+  boings: [STAND.from],
   hello: 38.0,
 }
