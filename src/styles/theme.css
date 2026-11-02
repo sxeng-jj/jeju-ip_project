@@ -187,18 +187,35 @@ a { text-underline-offset: 2px; }
 .cal { border: 1px solid var(--jeju-line); border-radius: 0.75rem; overflow: hidden; background: #fff; }
 .cal-head, .cal-days, .cal-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .cal-head { text-align: center; font-size: 0.8rem; padding: 0.4rem 0; background: var(--jeju-green-50); color: var(--jeju-green-dark); font-weight: 600; }
-.cal-week { border-top: 1px solid var(--jeju-line); padding-bottom: 0.35rem; }
-.cal-day { padding: 0.2rem 0.4rem; font-size: 0.75rem; text-align: right; border-left: 1px solid #eef3ef; min-height: 1.5rem; color: var(--jeju-muted); }
+.cal-week { border-top: 1px solid var(--jeju-line); padding-bottom: 0.2rem; }
+
+/* 날짜 칸(눌러서 그날 행사를 본다) */
+.cal-day { display: block; width: 100%; padding: 0.2rem 0.45rem; border: 0; border-left: 1px solid #eef3ef; background: transparent; font: inherit; font-size: 0.78rem; text-align: right; min-height: 1.6rem; color: var(--jeju-muted); }
 .cal-day:first-child { border-left: 0; }
+button.cal-day { cursor: pointer; }
+button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink); }
 .cal-day.off { background: #f6f8f6; }
 .cal-day.today { color: var(--jeju-ink); font-weight: 800; }
 .cal-day.today::before { content: ''; display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.3rem; border-radius: 50%; background: var(--jeju-orange); }
-.cal-bars { grid-auto-flow: row dense; row-gap: 3px; padding: 0 2px; }
+.cal-day.sel { background: var(--jeju-orange-50); box-shadow: inset 0 -2px 0 var(--jeju-orange); color: var(--jeju-ink); font-weight: 800; }
+
+/* 막대: 줄 수를 고정해서 주마다 높이가 같다. 마지막 줄은 '+N' 자리 */
+.cal-bars { grid-template-rows: repeat(var(--lanes, 3), 1.45rem) 1.2rem; row-gap: 3px; padding: 2px 2px 4px; }
 .cal-bar {
   display: block; min-width: 0; padding: 0.1rem 0.45rem;
-  font-size: 0.72rem; line-height: 1.35; font-weight: 600; text-decoration: none;
+  font-size: 0.72rem; line-height: 1.4; font-weight: 600; text-decoration: none;
   border-radius: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cal-bar:hover { filter: brightness(1.08) saturate(1.1); }
 .cal-bar.contL { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .cal-bar.contR { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.cal-more { border: 0; background: transparent; padding: 0; font-size: 0.72rem; font-weight: 700; color: var(--jeju-green); text-align: center; cursor: pointer; }
+.cal-more:hover { text-decoration: underline; }
+
+/* 선택한 날·장기 진행 목록 */
+.cal-panel { border: 1px solid var(--jeju-line); border-radius: 0.75rem; background: #fff; padding: 0.85rem 1rem; }
+.cal-panel summary { cursor: pointer; }
+.cal-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.25rem; border-top: 1px solid #eef3ef; text-decoration: none; color: var(--jeju-ink); }
+.cal-item:first-of-type { border-top: 0; }
+.cal-item:hover { background: var(--jeju-green-50); }
+.cal-item i { font-size: 0.6rem; flex-shrink: 0; }

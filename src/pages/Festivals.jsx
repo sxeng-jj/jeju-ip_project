@@ -220,6 +220,8 @@ export default function Festivals() {
 
       {!loading && !error && shown.length === 0 && <Alert variant="secondary">조건에 맞는 축제·행사가 없어요. 필터를 줄여 보세요.</Alert>}
 
+      {view === 'list' && (
+      <>
       <Row xs={1} sm={2} lg={3} className="g-3 pb-5">
         {shown.slice(0, limit).map((f) => (
           <Col key={f.id}>
@@ -234,6 +236,8 @@ export default function Festivals() {
             더 보기 ({shown.length - limit}건 남음)
           </Button>
         </div>
+      )}
+      </>
       )}
 
       {stampTarget && (
