@@ -67,13 +67,10 @@ export function seasonOf(ymd) {
 }
 
 export const SEASONS = {
-  spring: { label: '봄 (3~5월)', color: '#ff8fb8' },
-  summer: { label: '여름 (6~8월)', color: '#2ed3c6' },
-  autumn: { label: '가을 (9~11월)', color: '#ff9a3c' },
-  winter: { label: '겨울 (12~2월)', color: '#7db7ff' },
+  spring: { label: '봄 (3~5월)', color: '#ff4f9a' },
+  summer: { label: '여름 (6~8월)', color: '#12d6c0' },
+  autumn: { label: '가을 (9~11월)', color: '#ff8a1c' },
+  winter: { label: '겨울 (12~2월)', color: '#4c9aff' },
 }
-
-// 주변 장소 종류별 색 (초록 섬 위에서 잘 보이도록 밝은 색)
-export const KIND_COLORS = { 관광지: '#ffffff', 문화시설: '#c58bff', 국가유산: '#ffd84a' }
 
 export const seasonColor = (ymd) => SEASONS[seasonOf(ymd)].color

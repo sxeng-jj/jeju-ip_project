@@ -35,3 +35,10 @@ export function sortFestivals(list, today = todayYmd()) {
     return b.end.localeCompare(a.end)
   })
 }
+
+// ── 월·달력 계산 ──────────────────────────────────────────
+export const ymdOf = (y, m, d) => `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`
+export const daysInMonth = (y, m) => new Date(y, m, 0).getDate()
+
+// 그 달과 기간이 하루라도 겹치는가 (8월 25일~11월 15일 행사는 8·9·10·11월에 모두 걸친다)
+export const overlapsMonth = (f, y, m) => f.start <= ymdOf(y, m, daysInMonth(y, m)) && f.end >= ymdOf(y, m, 1)

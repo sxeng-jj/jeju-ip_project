@@ -1,5 +1,6 @@
 // 국가유산청 국가유산 검색 오픈API (키 불필요, XML 응답)
 // 주의: 이름(ccbaMnm1) 검색이 불안정해서(해녀·영등 등이 0건) 제주 전체를 한 번 받아 서버에서 직접 거른다.
+import { fetchRetry } from './http.js'
 import { XMLParser } from 'fast-xml-parser'
 
 const parser = new XMLParser()
@@ -9,7 +10,7 @@ let cache = { at: 0, list: [] }
 async function loadAll() {
   if (Date.now() - cache.at < TTL && cache.list.length) return cache.list
   const params = new URLSearchParams({ ccbaCtcd: '50', pageUnit: '1000', pageIndex: '1' }) // 50 = 제주
-  const r = await fetch(`https://www.khs.go.kr/cha/SearchKindOpenapiList.do?${params}`)
+  const r = await fetchRetry(`https://www.khs.go.kr/cha/SearchKindOpenapiList.do?${params}`)
   if (!r.ok) throw new Error(`국가유산청 응답 오류 ${r.status}`)
   const item = parser.parse(await r.text())?.result?.item
   const list = (!item ? [] : Array.isArray(item) ? item : [item]).map((h) => ({

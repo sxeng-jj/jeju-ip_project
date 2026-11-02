@@ -1,5 +1,6 @@
 // 한국관광공사 TourAPI(KorService2) 공통 호출
 // - 키가 없거나 data.go.kr 게이트웨이가 거절한 경우를 읽을 수 있는 문장으로 던진다.
+import { fetchRetry } from './http.js'
 const BASE = 'https://apis.data.go.kr/B551011/KorService2'
 
 // TourAPI 이미지 주소는 http:// 로 오는데, https 사이트(Vercel)에서는 막힐 수 있어 https 로 바꾼다
@@ -17,7 +18,7 @@ export async function tourCall(op, params = {}) {
     pageNo: '1',
     ...params,
   })
-  const r = await fetch(`${BASE}/${op}?${qs}`)
+  const r = await fetchRetry(`${BASE}/${op}?${qs}`)
   const text = await r.text()
   let data
   try { data = JSON.parse(text) }

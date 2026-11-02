@@ -40,19 +40,6 @@ body {
   overflow-y: auto;
 }
 
-.course-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: #ff7a59;
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
 .pin-label {
   padding: 0.2rem 0.55rem;
   border-radius: 0.5rem;
@@ -71,3 +58,19 @@ body {
   flex-direction: column;
   gap: 0.5rem;
 }
+
+/* 월간 달력 */
+.cal { border: 1px solid rgba(255,255,255,.25); border-radius: .75rem; overflow: hidden; background: rgba(0,0,0,.18); }
+.cal-head, .cal-days, .cal-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-head { text-align: center; font-size: .8rem; padding: .4rem 0; background: rgba(255,255,255,.12); }
+.cal-week { border-top: 1px solid rgba(255,255,255,.15); padding-bottom: .35rem; }
+.cal-day { padding: .2rem .4rem; font-size: .75rem; text-align: right; border-left: 1px solid rgba(255,255,255,.1); min-height: 1.5rem; }
+.cal-day:first-child { border-left: 0; }
+.cal-day.off { background: rgba(0,0,0,.2); }
+.cal-day.today { color: #fff; font-weight: 700; }
+.cal-day.today::before { content: ""; display: inline-block; width: .45rem; height: .45rem; margin-right: .3rem; border-radius: 50%; background: #ff7a59; }
+.cal-bars { grid-auto-flow: row dense; row-gap: 3px; padding: 0 2px; }
+.cal-bar { display: block; min-width: 0; padding: .1rem .45rem; font-size: .72rem; line-height: 1.35; color: #111; font-weight: 600; text-decoration: none; border-radius: .35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-bar:hover { filter: brightness(1.12); color: #000; }
+.cal-bar.contL { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.cal-bar.contR { border-top-right-radius: 0; border-bottom-right-radius: 0; }

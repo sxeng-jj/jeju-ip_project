@@ -5,25 +5,24 @@ import PageHeader from '../components/PageHeader'
 import Jeju3D from '../components/Jeju3D'
 import FestivalCard from '../components/FestivalCard'
 import StampModal from '../components/StampModal'
-import { fetchFestivals, fetchNearby, fetchWeather } from '../api/client'
-import { buildCourse, isRainy } from '../lib/course'
-import { fmtDist } from '../lib/geo'
-import { KIND_COLORS, SEASONS, seasonColor } from '../lib/jeju'
-import { monthOf, sortFestivals, statusOf } from '../lib/date'
-import { forecastFor } from '../lib/weather'
+import { fetchFestivals, fetchWeather } from '../api/client'
+import { SEASONS, seasonColor } from '../lib/jeju'
+import { overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
+import { GROUPS, typeOf } from '../lib/festivalMeta'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
 
-// 3D 제주 지도 — 축제 핀을 고르면 주변 관광지·문화시설·국가유산과 하루 코스가 지도에 나타난다
+// 3D 제주 지도 — 축제·행사 핀을 누르면 카메라가 다가가고 정보 카드가 나온다
 export default function Map3D() {
   const [params] = useSearchParams()
+  const thisYear = Number(todayYmd().slice(0, 4))
   const [list, setList] = useState([])
   const [weather, setWeather] = useState({})
-  const [nearby, setNearby] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [month, setMonth] = useState(0)
+  const [group, setGroup] = useState('all')
   const [selected, setSelected] = useState(params.get('festival')) // ?festival=ID 로 바로 선택
   const [stampTarget, setStampTarget] = useState(null)
 
@@ -46,25 +45,14 @@ export default function Map3D() {
   }, [])
 
   const shown = useMemo(
-    () => sortFestivals(month === 0 ? list : list.filter((f) => monthOf(f.start) === month)),
-    [list, month],
+    () =>
+      sortFestivals(
+        list.filter((f) => (month === 0 || overlapsMonth(f, thisYear, month)) && (group === 'all' || typeOf(f).group === group)),
+      ),
+    [list, month, group, thisYear],
   )
   const current = shown.find((f) => f.id === selected)
-
-  // 고른 축제 주변 장소 (5km)
-  useEffect(() => {
-    const f = list.find((x) => x.id === selected)
-    if (!f) { setNearby([]); return }
-    let dead = false
-    fetchNearby(f.lat, f.lng, 5000)
-      .then((d) => { if (!dead) setNearby(d) })
-      .catch(() => { if (!dead) setNearby([]) })
-    return () => { dead = true }
-  }, [selected, list])
-
   const focus = useMemo(() => (current ? { lat: current.lat, lng: current.lng } : null), [current])
-  const rainy = current ? isRainy(forecastFor(current, weather)) : false
-  const course = useMemo(() => (focus ? buildCourse(focus, nearby, { rainy }) : []), [focus, nearby, rainy])
 
   const stampOf = (f) => stamps.find((s) => s.festival_id === String(f.id))
   const openStamp = (f) =>
@@ -72,13 +60,19 @@ export default function Map3D() {
 
   return (
     <Container>
-      <PageHeader icon="globe-asia-australia" title="3D 제주 지도" sub="축제 핀을 누르면 주변 코스가 나타나요. 드래그로 지도를 돌릴 수 있어요." />
+      <PageHeader icon="globe-asia-australia" title="3D 제주 지도" sub="핀을 누르면 해당 축제·행사로 다가가요. 드래그로 지도를 돌릴 수 있어요." />
 
-      <Row className="g-3 align-items-center mb-2">
+      <Row className="g-2 align-items-center mb-2">
         <Col xs="auto">
           <Form.Select size="sm" value={month} onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}>
-            <option value={0}>전체 월</option>
-            {Array.from({ length: 12 }, (_, i) => <option key={i} value={i + 1}>{i + 1}월 시작</option>)}
+            <option value={0}>전체 기간</option>
+            {Array.from({ length: 12 }, (_, i) => <option key={i} value={i + 1}>{i + 1}월</option>)}
+          </Form.Select>
+        </Col>
+        <Col xs="auto">
+          <Form.Select size="sm" value={group} onChange={(e) => { setGroup(e.target.value); setSelected(null) }}>
+            <option value="all">전체 유형</option>
+            {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
           </Form.Select>
         </Col>
         <Col className="small d-flex flex-wrap gap-3">
@@ -87,15 +81,6 @@ export default function Map3D() {
           ))}
         </Col>
       </Row>
-      {current && (
-        <div className="small d-flex flex-wrap gap-3 mb-2">
-          <span className="text-secondary">주변 장소:</span>
-          {Object.entries(KIND_COLORS).map(([k, c]) => (
-            <span key={k}><i className="bi bi-circle-fill me-1" style={{ color: c }} />{k}</span>
-          ))}
-          <span><span className="course-num me-1" style={{ width: '1.1rem', height: '1.1rem', fontSize: '.65rem' }}>1</span>추천 코스</span>
-        </div>
-      )}
 
       {error && <Alert variant="danger">{error}</Alert>}
 
@@ -103,49 +88,27 @@ export default function Map3D() {
         <Col lg={8}>
           <div className="map3d-wrap">
             {loading && <div className="map3d-loading"><Spinner /></div>}
-            <Jeju3D
-              festivals={shown}
-              selectedId={selected}
-              onSelect={(f) => setSelected(f ? f.id : null)}
-              nearby={nearby}
-              course={course}
-              focus={focus}
-            />
+            <Jeju3D festivals={shown} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} focus={focus} />
           </div>
           <p className="small text-secondary mt-2 mb-0">
-            축제 {shown.length}곳 · 반짝이는 핀은 진행중, 흐린 핀은 종료된 축제예요.
+            {shown.length}곳 · 핀 색은 시작 계절, 밝게 빛나는 핀은 진행중·예정, 어두운 핀은 종료예요.
           </p>
         </Col>
         <Col lg={4}>
           {current ? (
-            <FestivalCard festival={current} weather={weather} stamped={Boolean(stampOf(current))} onStamp={openStamp} />
+            <>
+              <FestivalCard festival={current} weather={weather} stamped={Boolean(stampOf(current))} onStamp={openStamp} />
+              <Link to={`/festivals/${current.id}`} className="small d-block mt-2">상세정보 전체 보기 →</Link>
+            </>
           ) : (
-            <Alert variant="secondary">핀을 누르거나 아래 목록에서 축제를 골라 보세요.</Alert>
-          )}
-
-          {current && course.length > 0 && (
-            <div className="mt-3">
-              <div className="small fw-semibold mb-1">
-                추천 코스 {rainy && <span className="text-info">(비 오는 날)</span>}
-                <Link to={`/festivals/${current.id}`} className="ms-2 small">자세히 →</Link>
-              </div>
-              <ListGroup>
-                {course.map((s, i) => (
-                  <ListGroup.Item key={s.id} className="small py-2 d-flex align-items-center gap-2">
-                    <span className="course-num flex-shrink-0">{i + 1}</span>
-                    <span className="text-truncate">{s.title}</span>
-                    <span className="text-secondary ms-auto flex-shrink-0">{fmtDist(s.dist)}</span>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-            </div>
+            <Alert variant="secondary">핀을 누르거나 아래 목록에서 골라 보세요.</Alert>
           )}
 
           {/* 핀이 겹쳐 있어도 여기서 고를 수 있다 */}
           <ListGroup className="mt-3 map3d-list">
             {shown.map((f) => (
               <ListGroup.Item key={f.id} action active={f.id === selected} onClick={() => setSelected(f.id)} className="small py-2">
-                <i className="bi bi-circle-fill me-2" style={{ color: seasonColor(f.start), opacity: statusOf(f) === 'ended' ? 0.4 : 1 }} />
+                <i className="bi bi-circle-fill me-2" style={{ color: seasonColor(f.start), opacity: statusOf(f) === 'ended' ? 0.5 : 1 }} />
                 {f.title}
               </ListGroup.Item>
             ))}

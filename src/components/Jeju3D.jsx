@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, Line, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { HALLA, JEJU_OUTLINE, KIND_COLORS, project, seasonColor, spreadPins } from '../lib/jeju'
+import { HALLA, JEJU_OUTLINE, project, seasonColor, spreadPins } from '../lib/jeju'
 import { statusOf } from '../lib/date'
 
 const GROUND = 0.25 // 섬 두께(= 핀이 서는 높이)
@@ -15,7 +15,7 @@ function CameraRig({ focus }) {
     if (!focus) return { target: new THREE.Vector3(0, 0, 0), cam: new THREE.Vector3(0, 8, 6) }
     const [x, z] = project(focus.lng, focus.lat)
     const target = new THREE.Vector3(x, GROUND, z)
-    return { target, cam: target.clone().add(new THREE.Vector3(0, 3.6, 2.8)) }
+    return { target, cam: target.clone().add(new THREE.Vector3(0, 4.8, 3.8)) }
   }, [focus])
 
   // 목표가 바뀌면 이동 시작, 사용자가 지도를 잡고 돌리면 이동을 멈춘다
@@ -36,46 +36,6 @@ function CameraRig({ focus }) {
     if (state.camera.position.distanceTo(goal.cam) < 0.02) moving.current = false
   })
   return null
-}
-
-// 주변 장소 점(종류별 색) + 코스 번호. 코스에 든 점은 더 크게.
-function Spots({ spots, courseIds }) {
-  const [hover, setHover] = useState(null)
-  return spots.map((s) => {
-    const [x, z] = project(s.lng, s.lat)
-    const inCourse = courseIds.includes(s.id)
-    const color = KIND_COLORS[s.kind]
-    return (
-      <group key={s.id} position={[x, GROUND + 0.05, z]}>
-        <mesh
-          onPointerOver={(e) => { e.stopPropagation(); setHover(s.id) }}
-          onPointerOut={() => setHover(null)}
-        >
-          <sphereGeometry args={[inCourse ? 0.075 : 0.045, 14, 14]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={inCourse ? 0.6 : 0.2} />
-        </mesh>
-        {(hover === s.id || inCourse) && (
-          <Html position={[0, 0.2, 0]} center style={{ pointerEvents: 'none' }}>
-            {inCourse && hover !== s.id
-              ? <span className="course-num">{courseIds.indexOf(s.id) + 1}</span>
-              : <div className="pin-label">{s.title}</div>}
-          </Html>
-        )}
-      </group>
-    )
-  })
-}
-
-// 축제장 → 1번 → 2번 → … 코스를 잇는 선
-function CourseLine({ focus, course }) {
-  const pts = useMemo(() => {
-    if (!focus || course.length === 0) return null
-    return [focus, ...course].map((p) => {
-      const [x, z] = project(p.lng, p.lat)
-      return [x, GROUND + 0.1, z]
-    })
-  }, [focus, course])
-  return pts ? <Line points={pts} color="#ffffff" lineWidth={2} dashed dashSize={0.12} gapSize={0.08} /> : null
 }
 
 // 해안선 좌표 → 부드러운 곡선 → 압출한 섬 모양
@@ -118,9 +78,15 @@ function Pin({ festival: f, at, selected, onSelect }) {
   const [hover, setHover] = useState(false)
   const { x, z, ox, oz } = at
   const moved = Math.hypot(x - ox, z - oz) > 0.01 // 겹쳐서 펼쳐진 핀인가
-  const color = seasonColor(f.start)
-  const live = statusOf(f) === 'ongoing'
-  const ended = statusOf(f) === 'ended'
+  const status = statusOf(f)
+  const live = status === 'ongoing'
+  const ended = status === 'ended'
+  // 종료된 축제는 투명하게 만들지 않고, 같은 색을 어둡게 눌러서 구분한다 (선명도는 유지)
+  const color = useMemo(() => {
+    const c = new THREE.Color(seasonColor(f.start))
+    return ended ? `#${c.multiplyScalar(0.62).getHexString()}` : `#${c.getHexString()}`
+  }, [f.start, ended])
+  const glow = selected || live ? 0.9 : ended ? 0.2 : 0.5
 
   useFrame(({ clock }) => {
     const bob = live || selected ? Math.sin(clock.elapsedTime * 3) * 0.07 : 0
@@ -147,12 +113,12 @@ function Pin({ festival: f, at, selected, onSelect }) {
         onPointerOut={() => { setHover(false); document.body.style.cursor = '' }}
       >
         <mesh position={[0, 0.45, 0]} scale={selected ? 1.5 : 1}>
-          <sphereGeometry args={[0.11, 20, 20]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={selected || live ? 0.7 : 0.25} opacity={ended ? 0.45 : 1} transparent={ended} />
+          <sphereGeometry args={[0.13, 24, 24]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={glow} roughness={0.3} metalness={0.15} />
         </mesh>
         <mesh position={[0, 0.2, 0]} rotation={[Math.PI, 0, 0]}>
-          <coneGeometry args={[0.07, 0.4, 14]} />
-          <meshStandardMaterial color={color} opacity={ended ? 0.45 : 1} transparent={ended} />
+          <coneGeometry args={[0.08, 0.4, 16]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={glow * 0.5} roughness={0.4} />
         </mesh>
         {(hover || selected) && (
           <Html position={[0, 0.8, 0]} center style={{ pointerEvents: 'none' }}>
@@ -165,12 +131,11 @@ function Pin({ festival: f, at, selected, onSelect }) {
   )
 }
 
-export default function Jeju3D({ festivals, selectedId, onSelect, nearby = [], course = [], focus = null }) {
+export default function Jeju3D({ festivals, selectedId, onSelect, focus = null }) {
   const spots = useMemo(() => spreadPins(festivals), [festivals])
-  const courseIds = useMemo(() => course.map((c) => c.id), [course])
   return (
     <Canvas camera={{ position: [0, 8, 6], fov: 45 }} dpr={[1, 2]} onPointerMissed={() => onSelect(null)}>
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.95} />
       <directionalLight position={[5, 10, 4]} intensity={1.3} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
@@ -180,8 +145,6 @@ export default function Jeju3D({ festivals, selectedId, onSelect, nearby = [], c
 
       <Island />
       <Hallasan />
-      <Spots spots={nearby} courseIds={courseIds} />
-      <CourseLine focus={focus} course={course} />
       {festivals.map((f) => (
         <Pin key={f.id} festival={f} at={spots[f.id]} selected={f.id === selectedId} onSelect={onSelect} />
       ))}

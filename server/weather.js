@@ -1,4 +1,5 @@
 // 기상청 단기예보 조회서비스 (VilageFcstInfoService_2.0 / getVilageFcst)
+import { fetchRetry } from './http.js'
 const BASE = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst'
 const GRID = { 제주시: [53, 38], 서귀포시: [52, 33] } // 기상청 격자 좌표(nx, ny)
 const SKY = { 1: '맑음', 3: '구름많음', 4: '흐림' }
@@ -29,7 +30,7 @@ export async function getWeather({ place = '제주시' } = {}) {
     ny: String(ny),
     ...baseDateTime(),
   })
-  const r = await fetch(`${BASE}?${params}`)
+  const r = await fetchRetry(`${BASE}?${params}`)
   const text = await r.text()
   let data
   try { data = JSON.parse(text) }
