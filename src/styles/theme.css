@@ -1,0 +1,55 @@
+:root {
+  --festa-accent: #ff7a59;
+  --festa-sea: #3ec6c6;
+}
+
+body {
+  font-family: 'Pretendard', system-ui, sans-serif;
+}
+
+.festa-hero {
+  padding: 4rem 0 3rem;
+  text-align: center;
+}
+
+.festa-hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.map3d-wrap {
+  position: relative;
+  height: 62vh;
+  min-height: 360px;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, #2a6db0, #0f2b4d);
+}
+
+.map3d-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.pin-label {
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  background: rgba(10, 20, 40, 0.85);
+  color: #fff;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
