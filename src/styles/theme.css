@@ -151,18 +151,30 @@ a { text-underline-offset: 2px; }
 }
 .festa-photo-empty { background: var(--jeju-green-50); border: 1px dashed var(--jeju-green-100); }
 
-/* ── 3D 지도 ── */
-.map3d-wrap {
+/* ── 지도 ── */
+.map-wrap {
   position: relative;
   height: 62vh;
   min-height: 360px;
   border-radius: 1rem;
   overflow: hidden;
   border: 1px solid var(--jeju-line);
-  background: linear-gradient(180deg, #e9f8f9, #bde6ec); /* 맑은 날 바다 안개 */
+  isolation: isolate; /* 지도 안의 z-index 가 메뉴·알림 위로 올라오지 않게 */
+  background: #e9f1f2;
 }
-.map3d-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
-.map3d-list { max-height: 260px; overflow-y: auto; }
+.jm-map { width: 100%; height: 100%; }
+.jm-wrap { background: transparent; border: 0; }
+.jm-pin { width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45); transition: transform 0.15s; }
+.jm-pin.sel { transform: scale(1.45); box-shadow: 0 0 0 4px rgba(240, 138, 23, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5); }
+.jm-pin.ended { filter: brightness(0.6) saturate(0.8); }
+.jm-cluster {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--jeju-green); color: #fff; font-weight: 800; border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(31, 107, 69, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.map-list { max-height: 260px; overflow-y: auto; }
 .pin-label {
   padding: 0.2rem 0.55rem;
   border-radius: 0.5rem;
@@ -219,3 +231,7 @@ button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink);
 .cal-item:first-of-type { border-top: 0; }
 .cal-item:hover { background: var(--jeju-green-50); }
 .cal-item i { font-size: 0.6rem; flex-shrink: 0; }
+
+/* 3D 배지 진열장 */
+.shelf3d { height: 400px; border-radius: 1rem; overflow: hidden; border: 1px solid var(--jeju-line); background: #f7efe0; }
+.shelf-label { font-size: 0.72rem; font-weight: 700; color: var(--jeju-green-dark); background: rgba(255, 255, 255, 0.9); padding: 0.1rem 0.5rem; border-radius: 0.5rem; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }

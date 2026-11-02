@@ -144,7 +144,7 @@ export default function FestivalDetail() {
             <Button variant={plan.includes(id) ? 'warning' : 'outline-secondary'} onClick={() => togglePlan(id)}>
               <i className={`bi bi-bookmark-${plan.includes(id) ? 'check-fill' : 'plus'} me-1`} />{plan.includes(id) ? '내 일정에 담김' : '내 일정에 담기'}
             </Button>
-            <Link to={`/map?festival=${d.id}`} className="btn btn-outline-secondary"><i className="bi bi-globe-asia-australia me-1" />3D 지도에서 보기</Link>
+            <Link to={`/map?festival=${d.id}`} className="btn btn-outline-secondary"><i className="bi bi-map me-1" />지도에서 보기</Link>
             {Number.isFinite(d.lat) && d.lat !== 0 && (
               <a className="btn btn-outline-secondary" target="_blank" rel="noreferrer" href={`https://map.kakao.com/link/map/${encodeURIComponent(d.title)},${d.lat},${d.lng}`}>
                 <i className="bi bi-map me-1" />길찾기 지도

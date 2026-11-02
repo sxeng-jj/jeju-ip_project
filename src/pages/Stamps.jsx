@@ -1,11 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Alert, Button, Card, Col, Container, ProgressBar, Row, Spinner } from 'react-bootstrap'
+import { Alert, Badge, Button, Card, Col, Container, ProgressBar, Row, Spinner } from 'react-bootstrap'
 import PageHeader from '../components/PageHeader'
+import SafeBoundary from '../components/SafeBoundary'
 import { fetchFestivals } from '../api/client'
 import { buildCollection } from '../lib/badges'
 import { isSupabaseReady } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
+
+const BadgeShelf3D = lazy(() => import('../components/BadgeShelf3D'))
+
+// 3D(WebGL)를 쓸 수 있는 환경인가. 안 되면 3D 대신 카드 목록만 보여준다.
+function hasWebGL() {
+  try {
+    const c = document.createElement('canvas')
+    return Boolean(c.getContext('webgl2') || c.getContext('webgl'))
+  } catch {
+    return false
+  }
+}
 
 const Stars = ({ n }) =>
   [1, 2, 3, 4, 5].map((i) => <i key={i} className={`bi bi-star${i <= n ? '-fill' : ''} text-warning me-1`} />)
@@ -26,6 +39,27 @@ export default function Stamps() {
 
   const col = useMemo(() => buildCollection(stamps, list), [stamps, list])
   const earned = col.badges.filter((b) => b.ok).length
+  const [gl] = useState(hasWebGL)
+  const [selKey, setSelKey] = useState(null)
+  // 고른 배지, 없으면 얻은 배지 중 첫 번째, 그것도 없으면 첫 배지
+  const sel = col.badges.find((b) => b.key === selKey) ?? col.badges.find((b) => b.ok) ?? col.badges[0]
+
+  const badgeGrid = (
+    <Row xs={2} md={5} className="g-2">
+                  {col.badges.map((b) => (
+                    <Col key={b.key}>
+                      <Card className="h-100 text-center" style={{ opacity: b.ok ? 1 : 0.5 }}>
+                        <Card.Body className="p-2">
+                          <i className={`bi bi-${b.ok ? b.icon : 'lock'} fs-3 ${b.ok ? 'text-warning' : ''}`} />
+                          <div className="small fw-semibold mt-1">{b.name}</div>
+                          <div className="text-secondary" style={{ fontSize: '.7rem' }}>{b.desc}</div>
+                          {!b.ok && b.need && <div className="small mt-1">{b.have} / {b.need}</div>}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+  )
 
   return (
     <Container>
@@ -92,20 +126,34 @@ export default function Stamps() {
           {/* ── 배지 ── */}
           <section className="mb-4">
             <h5 className="mb-2">배지 <small className="text-secondary ms-1">{earned} / {col.badges.length}</small></h5>
-            <Row xs={2} md={5} className="g-2">
-              {col.badges.map((b) => (
-                <Col key={b.key}>
-                  <Card className="h-100 text-center" style={{ opacity: b.ok ? 1 : 0.5 }}>
-                    <Card.Body className="p-2">
-                      <i className={`bi bi-${b.ok ? b.icon : 'lock'} fs-3 ${b.ok ? 'text-warning' : ''}`} />
-                      <div className="small fw-semibold mt-1">{b.name}</div>
-                      <div className="text-secondary" style={{ fontSize: '.7rem' }}>{b.desc}</div>
-                      {!b.ok && b.need && <div className="small mt-1">{b.have} / {b.need}</div>}
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+            {gl ? (
+              <>
+                <SafeBoundary fallback={badgeGrid}>
+                  <Suspense fallback={<div className="shelf3d d-flex align-items-center justify-content-center"><Spinner /></div>}>
+                    <BadgeShelf3D badges={col.badges} selectedKey={sel?.key} onSelect={setSelKey} />
+                  </Suspense>
+                  {sel && (
+                    <Card className="mt-2">
+                      <Card.Body className="d-flex align-items-center gap-3 py-2">
+                        <span style={{ fontSize: '2rem' }}>{sel.ok ? sel.emoji : '🔒'}</span>
+                        <div className="flex-grow-1">
+                          <div className="fw-semibold">{sel.name} {sel.ok && <Badge bg="success">획득</Badge>}</div>
+                          <div className="small text-secondary">
+                            {sel.desc}{!sel.ok && sel.need ? ` · 진행 ${sel.have} / ${sel.need}` : ''}
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  )}
+                  <details className="mt-2">
+                    <summary className="small text-secondary">목록으로 보기</summary>
+                    <div className="mt-2">{badgeGrid}</div>
+                  </details>
+                </SafeBoundary>
+              </>
+            ) : (
+              badgeGrid
+            )}
           </section>
 
           {/* ── 내 스탬프 목록 ── */}

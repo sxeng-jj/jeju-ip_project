@@ -15,7 +15,7 @@ import NotFound from './pages/NotFound'
 export const NAV_ITEMS = [
   { to: '/', label: '홈', icon: 'house' },
   { to: '/festivals', label: '축제', icon: 'calendar-event' },
-  { to: '/map', label: '3D 지도', icon: 'globe-asia-australia' },
+  { to: '/map', label: '지도', icon: 'map' },
   { to: '/stamps', label: '내 스탬프', icon: 'patch-check' },
   { to: '/agent', label: 'AI 가이드', icon: 'robot' },
 ]
@@ -29,8 +29,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'festivals', element: <Festivals /> },
       { path: 'festivals/:id', element: <FestivalDetail /> },
-      // 3D 라이브러리(three)가 무거워서 이 페이지에 들어갈 때만 내려받는다
-      { path: 'map', lazy: async () => ({ Component: (await import('./pages/Map3D')).default }) },
+      // 지도 라이브러리(leaflet)는 이 페이지에 들어갈 때만 내려받는다
+      { path: 'map', lazy: async () => ({ Component: (await import('./pages/FestivalMap')).default }) },
       { path: 'stamps', element: <Stamps /> },
       { path: 'agent', element: <Agent /> },
       { path: 'login', element: <Login /> },

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Alert, Col, Container, Form, ListGroup, Row, Spinner } from 'react-bootstrap'
 import PageHeader from '../components/PageHeader'
-import Jeju3D from '../components/Jeju3D'
+import JejuMap from '../components/JejuMap'
 import FestivalCard from '../components/FestivalCard'
 import StampModal from '../components/StampModal'
 import { fetchFestivals, fetchWeather } from '../api/client'
@@ -38,8 +38,8 @@ function statusText(f, today) {
   return `예정 · ${daysBetween(today, f.start)}일 후 시작`
 }
 
-// 3D 제주 지도 — 축제·행사 핀을 누르면 카메라가 다가가고 정보 카드가 나온다
-export default function Map3D() {
+// 제주 지도 — 축제·행사 핀을 누르면 그곳으로 이동하고 정보 카드가 나온다
+export default function FestivalMap() {
   const [params] = useSearchParams()
   const today = todayYmd()
   const months = useMemo(() => upcomingMonths(today), [today])
@@ -96,7 +96,6 @@ export default function Map3D() {
     return [...shown, ...list.filter((f) => !have.has(f.id) && (plan.includes(f.id) || f.id === selected))]
   }, [shown, list, plan, selected])
   const current = onMap.find((f) => f.id === selected)
-  const focus = useMemo(() => (current ? { lat: current.lat, lng: current.lng } : null), [current])
 
   // 내 일정: 담은 순서가 아니라 날짜 순서로 동선을 잇는다 (필터와 상관없이 목록 전체에서 찾는다)
   const route = useMemo(
@@ -112,7 +111,7 @@ export default function Map3D() {
 
   return (
     <Container>
-      <PageHeader icon="globe-asia-australia" title="3D 제주 지도" sub="핀을 누르면 해당 축제·행사로 다가가요. 드래그로 지도를 돌릴 수 있어요." />
+      <PageHeader icon="map" title="제주 지도" sub="핀을 누르면 정보가 나와요. 지도를 끌어 이동하고, 확대·축소할 수 있어요. 숫자는 같은 곳에 모인 행사예요." />
 
       <Row className="g-2 align-items-center mb-2">
         <Col xs="auto">
@@ -145,9 +144,9 @@ export default function Map3D() {
 
       <Row className="g-3 pb-5">
         <Col lg={8}>
-          <div className="map3d-wrap">
-            {loading && <div className="map3d-loading"><Spinner /></div>}
-            <Jeju3D festivals={onMap} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} focus={focus} route={route} />
+          <div className="map-wrap">
+            {loading && <div className="map-loading"><Spinner /></div>}
+            <JejuMap festivals={onMap} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} route={route} />
           </div>
           <p className="small text-secondary mt-2 mb-0">
             {shown.length}곳 · 핀 색은 시작 계절이에요. 이미 끝난 행사는 내 일정에 담았을 때만 어두운 핀으로 보여요.
@@ -203,7 +202,7 @@ export default function Map3D() {
           {!loading && !error && shown.length === 0 && (
             <Alert variant="secondary" className="mt-3 small">조건에 맞는 진행중·예정 행사가 없어요. 기간이나 유형을 바꿔 보세요.</Alert>
           )}
-          <ListGroup className="mt-3 map3d-list">
+          <ListGroup className="mt-3 map-list">
             {shown.map((f) => (
               <ListGroup.Item key={f.id} action active={f.id === selected} onClick={() => setSelected(f.id)} className="small py-2 d-flex gap-2 align-items-start">
                 <i className="bi bi-circle-fill mt-1 flex-shrink-0" style={{ color: seasonColor(f.start), fontSize: '.7rem' }} />

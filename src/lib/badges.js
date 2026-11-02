@@ -2,6 +2,12 @@ import { monthOf } from './date'
 import { seasonOf, SEASONS } from './jeju'
 import { GROUPS, typeOf } from './festivalMeta'
 
+// 3D 진열장의 메달 얼굴에 새길 그림 (이모지는 글꼴만 있으면 어디서나 그려진다)
+const BADGE_EMOJI = {
+  first: '🌱', explorer: '🧭', master: '🏆', both: '🗺️', seasons: '🍂',
+  festival: '🎈', music: '🎭', art: '🖼️', writer: '✍️', months: '📅',
+}
+
 // 스탬프 + 행사 목록 → 도감 진행률과 배지
 // stamps: Supabase stamps 행들, list: 전체 행사 목록
 export function buildCollection(stamps, list) {
@@ -41,7 +47,7 @@ export function buildCollection(stamps, list) {
     { key: 'art', icon: 'easel', name: '전시 마니아', desc: '전시 3곳 방문', ok: group('전시') >= 3, progress: [group('전시'), 3] },
     { key: 'writer', icon: 'pencil', name: '후기 작가', desc: '후기 3개 남기기', ok: reviews >= 3, progress: [reviews, 3] },
     { key: 'months', icon: 'calendar-check', name: '꾸준한 여행자', desc: '서로 다른 3개 달의 행사 방문', ok: months.size >= 3, progress: [months.size, 3] },
-  ].map(({ progress: p, ...b }) => ({ ...b, have: p ? Math.min(p[0], p[1]) : undefined, need: p?.[1] }))
+  ].map(({ progress: p, ...b }) => ({ ...b, emoji: BADGE_EMOJI[b.key], have: p ? Math.min(p[0], p[1]) : undefined, need: p?.[1] }))
 
   return { sections, badges, collected: new Set(got.map((f) => f.id)).size, total: list.length }
 }

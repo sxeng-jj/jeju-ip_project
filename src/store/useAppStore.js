@@ -125,7 +125,7 @@ export const useAppStore = create(
         set({ reviews: map })
       },
 
-      // 내 일정 — 담아 둔 축제 id (3D 지도에서 동선과 이동 거리를 비교한다). 이 브라우저에만 저장된다.
+      // 내 일정 — 담아 둔 축제 id (지도에서 동선과 이동 거리를 비교한다). 이 브라우저에만 저장된다.
       plan: [],
       togglePlan: (id) => {
         const plan = get().plan
