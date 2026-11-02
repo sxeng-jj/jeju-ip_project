@@ -23,6 +23,7 @@ export const ping = () => get('/api/hello')
 
 // 공공데이터 API
 export const fetchFestivals = (year) => get(`/api/festivals${year ? `?year=${year}` : ''}`)
+export const fetchNearby = (lat, lng, radius = 5000) => get(`/api/nearby?lat=${lat}&lng=${lng}&radius=${radius}`)
 export const fetchWeather = (place = '제주시') => get(`/api/weather?place=${encodeURIComponent(place)}`)
 export const fetchHeritage = (keyword = '', kind = '') =>
   get(`/api/heritage?keyword=${encodeURIComponent(keyword)}&kind=${encodeURIComponent(kind)}`)

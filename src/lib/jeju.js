@@ -73,4 +73,7 @@ export const SEASONS = {
   winter: { label: '겨울 (12~2월)', color: '#7db7ff' },
 }
 
+// 주변 장소 종류별 색 (초록 섬 위에서 잘 보이도록 밝은 색)
+export const KIND_COLORS = { 관광지: '#ffffff', 문화시설: '#c58bff', 국가유산: '#ffd84a' }
+
 export const seasonColor = (ymd) => SEASONS[seasonOf(ymd)].color

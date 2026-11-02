@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Badge, Button, Card } from 'react-bootstrap'
 import WeatherBadge from './WeatherBadge'
 import { daysBetween, fmtYmd, statusOf, todayYmd } from '../lib/date'
@@ -36,14 +37,17 @@ export default function FestivalCard({ festival: f, weather, stamped, onStamp })
         </Card.Text>
         {w && <WeatherBadge w={w} showDate />}
       </Card.Body>
-      {onStamp && (
-        <Card.Footer className="bg-transparent border-0 pt-0">
-          <Button size="sm" variant={stamped ? 'success' : 'outline-primary'} onClick={() => onStamp(f)}>
+      <Card.Footer className="bg-transparent border-0 pt-0 d-flex gap-2">
+        <Link to={`/festivals/${f.id}`} className="btn btn-sm btn-primary">
+          <i className="bi bi-signpost-split me-1" />주변 코스
+        </Link>
+        {onStamp && (
+          <Button size="sm" variant={stamped ? 'success' : 'outline-light'} onClick={() => onStamp(f)}>
             <i className={`bi bi-patch-check${stamped ? '-fill' : ''} me-1`} />
             {stamped ? '스탬프 완료' : '스탬프 찍기'}
           </Button>
-        </Card.Footer>
-      )}
+        )}
+      </Card.Footer>
     </Card>
   )
 }

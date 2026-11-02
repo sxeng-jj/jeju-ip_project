@@ -1,11 +1,82 @@
-import { useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, Line, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { HALLA, JEJU_OUTLINE, project, seasonColor, spreadPins } from '../lib/jeju'
+import { HALLA, JEJU_OUTLINE, KIND_COLORS, project, seasonColor, spreadPins } from '../lib/jeju'
 import { statusOf } from '../lib/date'
 
 const GROUND = 0.25 // 섬 두께(= 핀이 서는 높이)
+
+// 축제를 고르면 카메라가 그 지점으로 다가간다 (움직임이 끝난 뒤에는 사용자가 자유롭게 돌릴 수 있다)
+function CameraRig({ focus }) {
+  const controls = useThree((s) => s.controls)
+  const moving = useRef(false)
+  const goal = useMemo(() => {
+    if (!focus) return { target: new THREE.Vector3(0, 0, 0), cam: new THREE.Vector3(0, 8, 6) }
+    const [x, z] = project(focus.lng, focus.lat)
+    const target = new THREE.Vector3(x, GROUND, z)
+    return { target, cam: target.clone().add(new THREE.Vector3(0, 3.6, 2.8)) }
+  }, [focus])
+
+  // 목표가 바뀌면 이동 시작, 사용자가 지도를 잡고 돌리면 이동을 멈춘다
+  useEffect(() => { moving.current = true }, [goal])
+  useEffect(() => {
+    if (!controls) return
+    const stop = () => { moving.current = false }
+    controls.addEventListener('start', stop)
+    return () => controls.removeEventListener('start', stop)
+  }, [controls])
+
+  useFrame((state, delta) => {
+    if (!controls || !moving.current) return
+    const k = 1 - Math.exp(-6 * delta) // 프레임 속도와 상관없이 같은 속도로 다가간다
+    controls.target.lerp(goal.target, k)
+    state.camera.position.lerp(goal.cam, k)
+    controls.update()
+    if (state.camera.position.distanceTo(goal.cam) < 0.02) moving.current = false
+  })
+  return null
+}
+
+// 주변 장소 점(종류별 색) + 코스 번호. 코스에 든 점은 더 크게.
+function Spots({ spots, courseIds }) {
+  const [hover, setHover] = useState(null)
+  return spots.map((s) => {
+    const [x, z] = project(s.lng, s.lat)
+    const inCourse = courseIds.includes(s.id)
+    const color = KIND_COLORS[s.kind]
+    return (
+      <group key={s.id} position={[x, GROUND + 0.05, z]}>
+        <mesh
+          onPointerOver={(e) => { e.stopPropagation(); setHover(s.id) }}
+          onPointerOut={() => setHover(null)}
+        >
+          <sphereGeometry args={[inCourse ? 0.075 : 0.045, 14, 14]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={inCourse ? 0.6 : 0.2} />
+        </mesh>
+        {(hover === s.id || inCourse) && (
+          <Html position={[0, 0.2, 0]} center style={{ pointerEvents: 'none' }}>
+            {inCourse && hover !== s.id
+              ? <span className="course-num">{courseIds.indexOf(s.id) + 1}</span>
+              : <div className="pin-label">{s.title}</div>}
+          </Html>
+        )}
+      </group>
+    )
+  })
+}
+
+// 축제장 → 1번 → 2번 → … 코스를 잇는 선
+function CourseLine({ focus, course }) {
+  const pts = useMemo(() => {
+    if (!focus || course.length === 0) return null
+    return [focus, ...course].map((p) => {
+      const [x, z] = project(p.lng, p.lat)
+      return [x, GROUND + 0.1, z]
+    })
+  }, [focus, course])
+  return pts ? <Line points={pts} color="#ffffff" lineWidth={2} dashed dashSize={0.12} gapSize={0.08} /> : null
+}
 
 // 해안선 좌표 → 부드러운 곡선 → 압출한 섬 모양
 function Island() {
@@ -94,8 +165,9 @@ function Pin({ festival: f, at, selected, onSelect }) {
   )
 }
 
-export default function Jeju3D({ festivals, selectedId, onSelect }) {
+export default function Jeju3D({ festivals, selectedId, onSelect, nearby = [], course = [], focus = null }) {
   const spots = useMemo(() => spreadPins(festivals), [festivals])
+  const courseIds = useMemo(() => course.map((c) => c.id), [course])
   return (
     <Canvas camera={{ position: [0, 8, 6], fov: 45 }} dpr={[1, 2]} onPointerMissed={() => onSelect(null)}>
       <ambientLight intensity={0.7} />
@@ -108,12 +180,15 @@ export default function Jeju3D({ festivals, selectedId, onSelect }) {
 
       <Island />
       <Hallasan />
+      <Spots spots={nearby} courseIds={courseIds} />
+      <CourseLine focus={focus} course={course} />
       {festivals.map((f) => (
         <Pin key={f.id} festival={f} at={spots[f.id]} selected={f.id === selectedId} onSelect={onSelect} />
       ))}
 
       {/* 휠 확대는 끈다: 지도 위에서 페이지 스크롤이 막히는 걸 방지 */}
-      <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.15} />
+      <OrbitControls makeDefault enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.15} />
+      <CameraRig focus={focus} />
     </Canvas>
   )
 }

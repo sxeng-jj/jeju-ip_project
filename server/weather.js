@@ -19,6 +19,7 @@ function baseDateTime() {
 // 반환: [{ place, date:'YYYYMMDD', min, max, pop, sky, rain }]
 export async function getWeather({ place = '제주시' } = {}) {
   const [nx, ny] = GRID[place] ?? GRID['제주시']
+  if (!process.env.DATA_GO_KR_KEY) throw new Error('DATA_GO_KR_KEY 환경변수가 없어요 (.env.local 또는 Vercel Environment Variables)')
   const params = new URLSearchParams({
     serviceKey: process.env.DATA_GO_KR_KEY,
     dataType: 'JSON',
@@ -33,6 +34,9 @@ export async function getWeather({ place = '제주시' } = {}) {
   let data
   try { data = JSON.parse(text) }
   catch { throw new Error('기상청 응답이 JSON이 아님: ' + text.slice(0, 120)) }
+
+  const gw = data?.OpenAPI_ServiceResponse?.cmmMsgHeader
+  if (gw) throw new Error(`기상청 인증 오류: ${gw.returnAuthMsg ?? gw.errMsg} (${gw.returnReasonCode})`)
 
   const header = data?.response?.header
   if (header?.resultCode !== '00') throw new Error(`기상청 오류 ${header?.resultCode}: ${header?.resultMsg}`)

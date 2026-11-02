@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from './layouts/RootLayout'
 import Home from './pages/Home'
 import Festivals from './pages/Festivals'
+import FestivalDetail from './pages/FestivalDetail'
 import Heritage from './pages/Heritage'
 import Stamps from './pages/Stamps'
 import Agent from './pages/Agent'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'festivals', element: <Festivals /> },
+      { path: 'festivals/:id', element: <FestivalDetail /> },
       // 3D 라이브러리(three)가 무거워서 이 페이지에 들어갈 때만 내려받는다
       { path: 'map', lazy: async () => ({ Component: (await import('./pages/Map3D')).default }) },
       { path: 'heritage', element: <Heritage /> },
