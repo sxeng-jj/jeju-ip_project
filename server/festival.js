@@ -75,6 +75,7 @@ export async function getFestivalDetail(id) {
     images: images.map((i) => httpsUrl(i.originimgurl)).filter(Boolean),
     lng: Number(common.mapx),
     lat: Number(common.mapy),
+    updated: (common.modifiedtime ?? '').slice(0, 8), // 정보 기준일 YYYYMMDD
     start: intro?.eventstartdate ?? '',
     end: intro?.eventenddate ?? '',
     playtime: text(intro?.playtime),

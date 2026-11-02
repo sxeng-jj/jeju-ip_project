@@ -2,8 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 
-// 디자인: Bootswatch 'quartz' (밤 축제 느낌의 다크 + 그라데이션)
-import 'bootswatch/dist/quartz/bootstrap.min.css'
+// 디자인: 기본 Bootstrap 위에 theme.css 가 제주 색(흰 바탕 + 한라산 초록 + 감귤 주황)을 입힌다
+import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './styles/theme.css'
 

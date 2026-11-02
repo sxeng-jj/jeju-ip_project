@@ -9,7 +9,7 @@ export default function Chips({ options, value, onChange, label }) {
         <Button
           key={o.value}
           size="sm"
-          variant={value === o.value ? 'primary' : 'outline-light'}
+          variant={value === o.value ? 'primary' : 'outline-secondary'}
           className="rounded-pill"
           onClick={() => onChange(o.value)}
         >

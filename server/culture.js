@@ -109,6 +109,7 @@ export async function getCultureDetail(seq) {
     images: [],
     lng,
     lat,
+    updated: '', // 문화정보 상세에는 갱신일이 없다
     start: r.startDate,
     end: r.endDate,
     playtime: '',

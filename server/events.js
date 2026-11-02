@@ -10,18 +10,21 @@ const norm = (s) =>
   s.replace(/제\s*\d+\s*회/g, '').replace(/20\d\d/g, '').replace(/[\s\d[\]()〈〉<>《》「」『』·.,:!'"“”‘’~\-_/&]/g, '').toLowerCase()
 const overlap = (a, b) => a.start <= b.end && b.start <= a.end
 
-// 이름이 같거나 한쪽이 다른 쪽을 포함하고(5글자 이상) 기간이 겹치면 같은 행사로 본다.
+// 서로 다른 출처에서 온 항목이 이름이 같거나 한쪽이 다른 쪽을 포함하고(5글자 이상) 기간이 겹치면 같은 행사로 본다.
 // 입력 순서가 곧 우선순위다 (앞에 있는 출처가 남는다).
 export function dedupe(list) {
   const kept = []
   for (const f of list) {
     const n = norm(f.title)
-    const dup = kept.some(
-      (k) =>
-        overlap(k, f) &&
-        (k.n === n || (Math.min(k.n.length, n.length) >= 5 && (k.n.includes(n) || n.includes(k.n)))),
+    const k = kept.find(
+      (x) =>
+        x.source !== f.source && // 같은 출처 안의 항목들은 서로 다른 일정(예: 페스티벌 전체 기간과 개별 공연)이라 합치지 않는다
+        overlap(x, f) &&
+        (x.n === n || (Math.min(x.n.length, n.length) >= 5 && (x.n.includes(n) || n.includes(x.n)))),
     )
-    if (!dup) kept.push({ ...f, n })
+    if (!k) { kept.push({ ...f, n }); continue }
+    // 같은 행사인데 출처마다 일정이 다르면 숨기지 않고 기록해 둔다 (상세 페이지에서 경고로 보여준다)
+    if (k.start !== f.start || k.end !== f.end) (k.conflicts ??= []).push({ source: f.source, start: f.start, end: f.end })
   }
   return kept.map(({ n: _n, ...f }) => f)
 }

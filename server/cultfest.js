@@ -54,6 +54,7 @@ function normalize(r) {
     _sponsor: [r.mnnstNm, r.auspcInsttNm, r.suprtInsttNm].filter(Boolean),
     _homepage: r.homepageUrl,
     _related: r.relateInfo,
+    _ref: ymd(r.referenceDate), // 데이터 기준일
   }
 }
 
@@ -87,7 +88,7 @@ export async function listStdFestivals({ year } = {}) {
   const from = `${year}0101`
   return (await loadJeju())
     .filter((f) => f.end >= from)
-    .map(({ _overview, _sponsor, _homepage, _related, ...f }) => f)
+    .map(({ _overview, _sponsor, _homepage, _related, _ref, ...f }) => f)
 }
 
 export async function getStdDetail(id) {
@@ -108,6 +109,7 @@ export async function getStdDetail(id) {
     images: [],
     lng: f.lng,
     lat: f.lat,
+    updated: f._ref,
     start: f.start,
     end: f.end,
     playtime: '',

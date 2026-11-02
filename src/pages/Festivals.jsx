@@ -8,7 +8,7 @@ import StampModal from '../components/StampModal'
 import WeatherBadge from '../components/WeatherBadge'
 import { fetchFestivals, fetchWeather } from '../api/client'
 import { overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
-import { GROUP_STYLE, GROUPS, typeOf } from '../lib/festivalMeta'
+import { GROUP_STYLE, GROUPS, THEMES, themesOf, typeOf } from '../lib/festivalMeta'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
@@ -39,6 +39,7 @@ export default function Festivals() {
   const [area, setArea] = useState('all') // all | 읍·면 이름
   const [group, setGroup] = useState('all') // all | 축제 | 공연 | 행사
   const [status, setStatus] = useState('all')
+  const [theme, setTheme] = useState('all') // all | 테마 key
   // 보기 상태
   const [view, setView] = useState('list') // list | calendar
   const [year, setYear] = useState(thisYear)
@@ -50,8 +51,13 @@ export default function Festivals() {
   const loadStamps = useAppStore((s) => s.loadStamps)
   const saveStamp = useAppStore((s) => s.saveStamp)
   const toast = useAppStore((s) => s.toast)
+  const reviews = useAppStore((s) => s.reviews)
+  const loadReviews = useAppStore((s) => s.loadReviews)
+  const plan = useAppStore((s) => s.plan)
+  const togglePlan = useAppStore((s) => s.togglePlan)
 
   useEffect(() => { loadStamps() }, [nickname, loadStamps])
+  useEffect(() => { loadReviews() }, [loadReviews])
 
   useEffect(() => {
     fetchFestivals()
@@ -79,9 +85,10 @@ export default function Festivals() {
         (city === 'all' || f.city === city) &&
         (area === 'all' || f.area === area) &&
         (group === 'all' || typeOf(f).group === group) &&
-        (status === 'all' || statusOf(f, today) === status),
+        (status === 'all' || statusOf(f, today) === status) &&
+        (theme === 'all' || themesOf(f).includes(theme)),
     )
-  }, [list, query, city, area, group, status, today])
+  }, [list, query, city, area, group, status, theme, today])
 
   const shown = useMemo(
     () => sortFestivals(month === 0 ? filtered : filtered.filter((f) => overlapsMonth(f, year, month))),
@@ -89,11 +96,11 @@ export default function Festivals() {
   )
 
   // 조건이 바뀌면 처음 한 페이지부터 다시 보여준다
-  useEffect(() => { setLimit(PAGE) }, [query, city, area, group, status, year, month])
+  useEffect(() => { setLimit(PAGE) }, [query, city, area, group, status, theme, year, month])
 
   const pickCity = (c) => { setCity(c); setArea('all') }
-  const reset = () => { setQuery(''); setCity('all'); setArea('all'); setGroup('all'); setStatus('all') }
-  const dirty = query || city !== 'all' || area !== 'all' || group !== 'all' || status !== 'all'
+  const reset = () => { setQuery(''); setCity('all'); setArea('all'); setGroup('all'); setStatus('all'); setTheme('all') }
+  const dirty = query || city !== 'all' || area !== 'all' || group !== 'all' || status !== 'all' || theme !== 'all'
 
   // 달력 월 이동 (해를 넘기면 연도도 바꾼다)
   const shift = (d) => {
@@ -114,7 +121,7 @@ export default function Festivals() {
     <Container>
       <PageHeader icon="calendar-event" title="제주 축제·행사" sub={`축제·공연·전시·행사 ${list.length}건 · 한국관광공사, 한국문화정보원, 지자체 문화축제 데이터`} />
 
-      <div className="small mb-3 p-2 px-3 rounded" style={{ background: 'rgba(0,0,0,.25)' }}>
+      <div className="small mb-3 p-2 px-3 festa-weather">
         <strong className="me-2">오늘 날씨 (기상청)</strong>
         {weatherError && <span className="text-warning">불러오지 못했어요: {weatherError}</span>}
         {CITIES.map((c) =>
@@ -152,24 +159,31 @@ export default function Festivals() {
           options={[{ value: 'all', label: '전체' }, ...GROUPS.map((g) => ({ value: g, label: g, count: count(list, (f) => typeOf(f).group === g) }))]}
         />
         <Chips label="상태" value={status} onChange={setStatus} options={STATUSES} />
+        <Chips
+          label="테마"
+          value={theme}
+          onChange={setTheme}
+          options={[{ value: 'all', label: '전체' }, ...THEMES.map((t) => ({ value: t.key, label: t.label, count: count(list, (f) => themesOf(f).includes(t.key)) }))]}
+        />
+        {theme !== 'all' && <div className="small text-secondary ms-1">테마는 행사 분류와 이름을 바탕으로 자동 분류한 것이라 정확하지 않을 수 있어요.</div>}
       </div>
 
       {/* ── 보기 전환 · 월 선택 ── */}
       <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
         <ButtonGroup size="sm">
-          <Button variant={view === 'list' ? 'primary' : 'outline-light'} onClick={() => switchView('list')}>
+          <Button variant={view === 'list' ? 'primary' : 'outline-secondary'} onClick={() => switchView('list')}>
             <i className="bi bi-grid me-1" />목록
           </Button>
-          <Button variant={view === 'calendar' ? 'primary' : 'outline-light'} onClick={() => switchView('calendar')}>
+          <Button variant={view === 'calendar' ? 'primary' : 'outline-secondary'} onClick={() => switchView('calendar')}>
             <i className="bi bi-calendar3 me-1" />월간 달력
           </Button>
         </ButtonGroup>
 
         {view === 'calendar' ? (
           <div className="d-flex align-items-center gap-2">
-            <Button size="sm" variant="outline-light" aria-label="이전 달" onClick={() => shift(-1)}><i className="bi bi-chevron-left" /></Button>
+            <Button size="sm" variant="outline-secondary" aria-label="이전 달" onClick={() => shift(-1)}><i className="bi bi-chevron-left" /></Button>
             <strong style={{ minWidth: '7rem', textAlign: 'center' }}>{year}년 {month}월</strong>
-            <Button size="sm" variant="outline-light" aria-label="다음 달" onClick={() => shift(1)}><i className="bi bi-chevron-right" /></Button>
+            <Button size="sm" variant="outline-secondary" aria-label="다음 달" onClick={() => shift(1)}><i className="bi bi-chevron-right" /></Button>
             <Button size="sm" variant="link" onClick={() => { setYear(thisYear); setMonth(Number(today.slice(4, 6))) }}>이번 달</Button>
           </div>
         ) : (
@@ -204,14 +218,14 @@ export default function Festivals() {
       <Row xs={1} sm={2} lg={3} className="g-3 pb-5">
         {shown.slice(0, limit).map((f) => (
           <Col key={f.id}>
-            <FestivalCard festival={f} weather={weather} stamped={Boolean(stampOf(f))} onStamp={openStamp} />
+            <FestivalCard festival={f} weather={weather} stamped={Boolean(stampOf(f))} onStamp={openStamp} review={reviews[f.id]} inPlan={plan.includes(f.id)} onPlan={togglePlan} />
           </Col>
         ))}
       </Row>
 
       {shown.length > limit && (
         <div className="text-center pb-5">
-          <Button variant="outline-light" onClick={() => setLimit(limit + PAGE)}>
+          <Button variant="outline-secondary" onClick={() => setLimit(limit + PAGE)}>
             더 보기 ({shown.length - limit}건 남음)
           </Button>
         </div>

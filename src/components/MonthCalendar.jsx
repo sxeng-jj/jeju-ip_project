@@ -60,7 +60,7 @@ export default function MonthCalendar({ year, month, festivals }) {
                   key={f.id}
                   to={`/festivals/${f.id}`}
                   className={`cal-bar${contL ? ' contL' : ''}${contR ? ' contR' : ''}`}
-                  style={{ gridColumn: `${s + 1} / ${e + 2}`, background: GROUP_STYLE[group].color }}
+                  style={{ gridColumn: `${s + 1} / ${e + 2}`, background: GROUP_STYLE[group].color, color: GROUP_STYLE[group].text }}
                   title={`${f.title} · ${label}`}
                 >
                   {f.title}

@@ -8,7 +8,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <Navbar expand="md" variant="dark" className="border-bottom border-secondary">
+      <Navbar expand="md" variant="light" className="festa-nav">
         <Container>
           <Navbar.Brand as={NavLink} to="/">
             <i className="bi bi-stars me-2" />제주 축제 달력
@@ -30,8 +30,8 @@ export default function RootLayout() {
         <Outlet />
       </main>
 
-      <footer className="text-center text-secondary small py-4">
-        데이터: 한국관광공사 · 기상청 · 국가유산청 (공공데이터포털)
+      <footer className="festa-footer text-center text-secondary small py-4 mt-5">
+        데이터: 한국관광공사 · 한국문화정보원 · 기상청 · 지자체 문화축제 (공공데이터포털)
       </footer>
 
       <div className="toast-stack">

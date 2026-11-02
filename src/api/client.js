@@ -25,6 +25,3 @@ export const ping = () => get('/api/hello')
 export const fetchFestivals = (year) => get(`/api/festivals${year ? `?year=${year}` : ''}`)
 export const fetchFestival = (id) => get(`/api/festival?id=${encodeURIComponent(id)}`)
 export const fetchWeather = (place = '제주시') => get(`/api/weather?place=${encodeURIComponent(place)}`)
-export const fetchHeritage = (keyword = '', kind = '') =>
-  get(`/api/heritage?keyword=${encodeURIComponent(keyword)}&kind=${encodeURIComponent(kind)}`)
-export const fetchHeritageKinds = () => get('/api/heritage?kinds=1')

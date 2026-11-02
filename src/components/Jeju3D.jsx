@@ -52,7 +52,7 @@ function Island() {
 
   return (
     <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}>
-      <meshStandardMaterial color="#4f9a64" roughness={0.9} flatShading />
+      <meshStandardMaterial color="#63ad6b" roughness={0.9} flatShading />
     </mesh>
   )
 }
@@ -63,11 +63,11 @@ function Hallasan() {
     <group position={[x, GROUND, z]}>
       <mesh position={[0, 0.4, 0]}>
         <coneGeometry args={[1.0, 0.8, 28]} />
-        <meshStandardMaterial color="#3d7f55" roughness={0.9} flatShading />
+        <meshStandardMaterial color="#2f7a4d" roughness={0.9} flatShading />
       </mesh>
       <mesh position={[0, 0.72, 0]}>
         <coneGeometry args={[0.28, 0.2, 28]} />
-        <meshStandardMaterial color="#e9f1f4" roughness={0.8} flatShading />
+        <meshStandardMaterial color="#f8faf5" roughness={0.8} flatShading />
       </mesh>
     </group>
   )
@@ -131,7 +131,31 @@ function Pin({ festival: f, at, selected, onSelect }) {
   )
 }
 
-export default function Jeju3D({ festivals, selectedId, onSelect, focus = null }) {
+// 내 일정 동선: 날짜 순서대로 핀(펼쳐진 자리)을 잇는 점선과 순서 번호
+function PlanRoute({ route, spots }) {
+  const pts = useMemo(
+    () =>
+      route.map((f) => {
+        const at = spots[f.id]
+        const [x, z] = at ? [at.x, at.z] : project(f.lng, f.lat)
+        return [x, GROUND + 0.14, z]
+      }),
+    [route, spots],
+  )
+  if (pts.length === 0) return null
+  return (
+    <>
+      {pts.length > 1 && <Line points={pts} color="#ffffff" lineWidth={2.5} dashed dashSize={0.14} gapSize='0.09' />}
+      {pts.map((p, i) => (
+        <Html key={route[i].id} position={[p[0], GROUND + 0.95, p[2]]} center style={{ pointerEvents: 'none' }}>
+          <span className="plan-num">{i + 1}</span>
+        </Html>
+      ))}
+    </>
+  )
+}
+
+export default function Jeju3D({ festivals, selectedId, onSelect, focus = null, route = [] }) {
   const spots = useMemo(() => spreadPins(festivals), [festivals])
   return (
     <Canvas camera={{ position: [0, 8, 6], fov: 45 }} dpr={[1, 2]} onPointerMissed={() => onSelect(null)}>
@@ -140,11 +164,12 @@ export default function Jeju3D({ festivals, selectedId, onSelect, focus = null }
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <circleGeometry args={[14, 64]} />
-        <meshStandardMaterial color="#1c4f86" roughness={0.4} metalness={0.2} />
+        <meshStandardMaterial color="#3fd0dc" emissive="#1a9aa8" emissiveIntensity={0.4} roughness={0.35} metalness={0.05} />
       </mesh>
 
       <Island />
       <Hallasan />
+      <PlanRoute route={route} spots={spots} />
       {festivals.map((f) => (
         <Pin key={f.id} festival={f} at={spots[f.id]} selected={f.id === selectedId} onSelect={onSelect} />
       ))}

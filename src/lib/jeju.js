@@ -77,10 +77,10 @@ export function seasonOf(ymd) {
 }
 
 export const SEASONS = {
-  spring: { label: '봄 (3~5월)', color: '#ff4f9a' },
-  summer: { label: '여름 (6~8월)', color: '#12d6c0' },
-  autumn: { label: '가을 (9~11월)', color: '#ff8a1c' },
-  winter: { label: '겨울 (12~2월)', color: '#4c9aff' },
+  spring: { label: '봄 (3~5월)', color: '#f4c20d' },
+  summer: { label: '여름 (6~8월)', color: '#1f7fd1' },
+  autumn: { label: '가을 (9~11월)', color: '#f57c00' },
+  winter: { label: '겨울 (12~2월)', color: '#c2185b' },
 }
 
 export const seasonColor = (ymd) => SEASONS[seasonOf(ymd)].color

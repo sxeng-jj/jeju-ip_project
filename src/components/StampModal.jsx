@@ -41,6 +41,7 @@ export default function StampModal({ festival, existing, onSave, onClose }) {
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
+        <Form.Text className="text-secondary">후기는 이 행사 페이지에서 다른 사람에게도 보여요.</Form.Text>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>취소</Button>
