@@ -5,20 +5,11 @@ import PageHeader from '../components/PageHeader'
 import SafeBoundary from '../components/SafeBoundary'
 import { fetchFestivals } from '../api/client'
 import { buildCollection } from '../lib/badges'
+import { hasWebGL } from '../lib/webgl'
 import { isSupabaseReady } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 
 const BadgeShelf3D = lazy(() => import('../components/BadgeShelf3D'))
-
-// 3D(WebGL)를 쓸 수 있는 환경인가. 안 되면 3D 대신 카드 목록만 보여준다.
-function hasWebGL() {
-  try {
-    const c = document.createElement('canvas')
-    return Boolean(c.getContext('webgl2') || c.getContext('webgl'))
-  } catch {
-    return false
-  }
-}
 
 const Stars = ({ n }) =>
   [1, 2, 3, 4, 5].map((i) => <i key={i} className={`bi bi-star${i <= n ? '-fill' : ''} text-warning me-1`} />)
