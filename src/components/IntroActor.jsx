@@ -101,8 +101,8 @@ function Actor({ reg, icons }) {
 
         {/* 변신 뒤에만 나타나는 부분들 */}
         <g ref={reg('strap')} opacity="0">
-          <path d={`M-30 ${-RY + 6} C-38 -14 -38 8 -34 28 M30 ${-RY + 6} C38 -14 38 8 34 28`} stroke="#2f6b45" strokeWidth="8" fill="none" strokeLinecap="round" />
-          <path d="M-35 6 H35" stroke="#2f6b45" strokeWidth="4" strokeLinecap="round" />
+          {/* 얼굴을 가리지 않도록 끈은 팔이 몸통에 이어지는 어깨 옆에만 짧게 */}
+          <path d="M-47 -12 Q-53 2 -49 17 M47 -12 Q53 2 49 17" stroke="#2f6b45" strokeWidth="7" fill="none" strokeLinecap="round" />
         </g>
         <g ref={reg('cheeks')}>
           <circle cx="-30" cy="10" r="9" fill="#f26b5b" opacity="0.5" />

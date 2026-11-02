@@ -103,7 +103,7 @@ export function renderFrame(el, t, vbW) {
   const pb = p('bag')
   scale(el.bag, pb, RX - 6, 6)
   el.strap.setAttribute('opacity', Math.min(1, Math.max(0, pb)).toFixed(2))
-  scale(el.camera, p('camera'), 8, 38)
+  scale(el.camera, p('camera'), 8, 50)
 
   // 신나서 들썩이는 표시 (뛸 때 터지는 선, 떠오르는 음표, 말풍선)
   const joy = joyAt(t)
