@@ -1,0 +1,147 @@
+import { memo } from 'react'
+import { rng } from '../lib/paint'
+import { RX, RY } from '../lib/intro'
+
+// 주인공 귤이: 여행 중에는 표정 없는 평범한 귤, 마지막에만 눈·입·손·발·모자·가방이 생긴다.
+// 모든 부분은 같은 몸통 그룹 안에 있어 잎과 과피가 함께 움직인다.
+
+const INK = '#2a2420'
+
+// 활동 아이콘: 둥근 선과 부드러운 색 (진한 녹색 선 + 감귤색 포인트)
+const ICON = { fill: 'none', stroke: '#2f6b45', strokeWidth: 4, strokeLinecap: 'round', strokeLinejoin: 'round' }
+const ICON_DRAWINGS = {
+  walk: ( // 산책: 발자국 두 개
+    <>
+      {[[-14, 8, -12], [14, -10, 12]].map(([x, y, rot], i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${rot})`}>
+          <ellipse cx="0" cy="6" rx="9" ry="13" fill="#f08a17" stroke="#2f6b45" strokeWidth="3.5" />
+          <ellipse cx="0" cy="-17" rx="6.5" ry="5" fill="#f08a17" stroke="#2f6b45" strokeWidth="3.5" />
+          {[-9, 0, 9].map((dx) => <circle key={dx} cx={dx} cy="-9" r="2.4" fill="#2f6b45" />)}
+        </g>
+      ))}
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M-26 -12 H-14 L-8 -22 H8 L14 -12 H26 Q32 -12 32 -6 V20 Q32 26 26 26 H-26 Q-32 26 -32 20 V-6 Q-32 -12 -26 -12Z" {...ICON} />
+      <circle cx="0" cy="6" r="13" {...ICON} fill="#f08a17" />
+      <circle cx="-4" cy="2" r="3.4" fill="#fff" stroke="none" />
+      <circle cx="22" cy="-4" r="2.6" fill="#f08a17" stroke="none" />
+    </>
+  ),
+  wave: ( // 물결
+    <>
+      <path d="M-30 -8 q10 -12 20 0 t20 0 t20 0" {...ICON} />
+      <path d="M-30 8 q10 -12 20 0 t20 0 t20 0" {...ICON} stroke="#f08a17" />
+      <path d="M-30 24 q10 -12 20 0 t20 0 t20 0" {...ICON} />
+      <circle cx="14" cy="-26" r="7" fill="#f08a17" stroke="none" />
+    </>
+  ),
+  shell: ( // 조개
+    <>
+      <path d="M-30 14 C-34 -14 -14 -28 0 -28 C14 -28 34 -14 30 14 Q0 28 -30 14Z" {...ICON} fill="#f08a17" fillOpacity="0.9" />
+      <path d="M0 -26 V20 M-14 -20 L-14 18 M14 -20 L14 18 M-24 -8 L-22 14 M24 -8 L22 14" {...ICON} strokeWidth="2.6" stroke="#fff3d6" />
+      <path d="M-10 26 h20 l-4 8 h-12z" {...ICON} strokeWidth="3" />
+    </>
+  ),
+  music: ( // 북소리: 음표
+    <>
+      <path d="M-14 16 V-22 L20 -28 V10" {...ICON} />
+      <path d="M-14 -12 L20 -18" {...ICON} />
+      <ellipse cx="-20" cy="18" rx="10" ry="8" fill="#f08a17" stroke="#2f6b45" strokeWidth="3.5" transform="rotate(-18 -20 18)" />
+      <ellipse cx="14" cy="12" rx="10" ry="8" fill="#f08a17" stroke="#2f6b45" strokeWidth="3.5" transform="rotate(-18 14 12)" />
+    </>
+  ),
+}
+
+function Actor({ reg, icons, sparkCount = 30 }) {
+  const r = rng(7)
+  const dots = Array.from({ length: 46 }, () => {
+    const a = r() * Math.PI * 2
+    const d = Math.sqrt(r()) * 0.88
+    return [Math.cos(a) * RX * d, Math.sin(a) * RY * d, 1.2 + r() * 1.8, 0.2 + r() * 0.25]
+  })
+  return (
+    <>
+      <ellipse ref={reg('shadow')} rx="58" ry="11" fill="#5a3a1c" opacity="0.25" />
+      <path ref={reg('stem')} stroke="#6b4a2e" strokeWidth="6" strokeLinecap="round" fill="none" />
+
+      <g ref={reg('body')}>
+        {/* 다리 (몸통 뒤에서 자란다) */}
+        {[-1, 1].map((s) => (
+          <g key={s} ref={reg(s < 0 ? 'legL' : 'legR')}>
+            <path d="M0 0 V40" stroke={INK} strokeWidth="5" strokeLinecap="round" />
+            <ellipse cx={s * 4} cy="42" rx="10" ry="4.8" fill={INK} />
+          </g>
+        ))}
+
+        {/* 둥글고 약간 납작한 몸통 + 과피 점무늬 */}
+        <ellipse rx={RX} ry={RY} fill="url(#gTang)" stroke="#c9590a" strokeOpacity="0.5" strokeWidth="1.6" />
+        {dots.map(([x, y, rr, o], i) => <circle key={i} cx={x.toFixed(1)} cy={y.toFixed(1)} r={rr.toFixed(1)} fill="#c75a0a" opacity={o} />)}
+        <path d={`M${-RX + 8} ${8} C${-RX + 20} ${RY - 4} ${RX - 30} ${RY + 2} ${RX - 4} 12 C${RX - 20} ${RY + 14} ${-RX + 24} ${RY + 12} ${-RX + 8} 8Z`} fill="#8a2b00" opacity="0.16" />
+        <ellipse cx="-20" cy="-22" rx="22" ry="12" fill="#fff" opacity="0.3" transform="rotate(-22 -20 -22)" />
+        <circle cx="2" cy={-RY + 3} r="6" fill="#a8430a" opacity="0.65" />
+
+        {/* 잎 하나 */}
+        <g transform={`translate(2 ${-RY + 1})`}>
+          <path d="M0 0 C-1 -8 3 -14 8 -16" stroke="#6b4a2e" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M6 -14 C14 -42 56 -52 86 -36 C68 -12 32 -2 6 -14Z" fill="#3f7d4e" stroke="#2a5a38" strokeWidth="1.4" />
+          <path d="M6 -14 C14 -42 56 -52 86 -36 C70 -34 34 -28 6 -14Z" fill="#6aa65a" opacity="0.55" />
+          <path d="M8 -14 C34 -26 58 -32 82 -36" stroke="#cfe6a8" strokeWidth="1.8" fill="none" opacity="0.8" />
+        </g>
+
+        {/* 변신 뒤에만 나타나는 부분들 */}
+        <g ref={reg('strap')} opacity="0">
+          <path d={`M${-RX + 18} ${-RY + 12} C-10 -6 20 18 ${RX - 12} 26`} stroke="#8b5a2b" strokeWidth="7" fill="none" strokeLinecap="round" />
+        </g>
+        <g ref={reg('cheeks')}>
+          <circle cx="-30" cy="10" r="9" fill="#f26b5b" opacity="0.5" />
+          <circle cx="30" cy="10" r="9" fill="#f26b5b" opacity="0.5" />
+        </g>
+        <g ref={reg('eyes')}>
+          <ellipse cx="-17" cy="0" rx="4.6" ry="5.4" fill={INK} />
+          <ellipse cx="17" cy="0" rx="4.6" ry="5.4" fill={INK} />
+          <circle cx="-15.5" cy="-2" r="1.5" fill="#fff" />
+          <circle cx="18.5" cy="-2" r="1.5" fill="#fff" />
+        </g>
+        <g ref={reg('mouth')}>
+          <path ref={reg('mouthOpen')} d="M-13 0 Q0 24 13 0Z" fill="#b8452c" opacity="0" />
+          <path d="M-13 0 Q0 15 13 0" stroke="#6b2a12" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+        </g>
+        <path ref={reg('armL')} stroke={INK} strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path ref={reg('armR')} stroke={INK} strokeWidth="5" strokeLinecap="round" fill="none" />
+        <circle ref={reg('handL')} r="6.5" fill={INK} />
+        <circle ref={reg('handR')} r="6.5" fill={INK} />
+        <g ref={reg('bag')}>
+          <rect x="-15" y="-12" width="30" height="26" rx="7" fill="#a86a32" stroke="#7a4a20" strokeWidth="2" />
+          <path d="M-15 -4 Q0 8 15 -4 V-9 Q0 -1 -15 -9Z" fill="#8b5a2b" />
+          <circle cx="0" cy="2" r="3.4" fill="#f08a17" />
+        </g>
+        <g ref={reg('hat')}>
+          <ellipse cx="0" cy="0" rx="40" ry="9.5" fill="#5f8734" stroke="#44641f" strokeWidth="1.6" />
+          <path d="M-26 -1 C-26 -34 26 -34 26 -1Z" fill="#7aa043" stroke="#44641f" strokeWidth="1.6" />
+          <path d="M-26.5 -6 H26.5 L26 -1 H-26Z" fill="#f08a17" />
+          <path d="M-12 -24 C-4 -30 8 -30 14 -24" stroke="#a9c46a" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7" />
+        </g>
+      </g>
+
+      {/* 모여들었다 터지는 금빛 반짝임 */}
+      <g>
+        {Array.from({ length: sparkCount }, (_, i) => (
+          <path key={i} ref={reg(`sp${i}`)} d="M0 -9 Q1.5 -1.5 9 0 Q1.5 1.5 0 9 Q-1.5 1.5 -9 0 Q-1.5 -1.5 0 -9Z" fill={i % 3 ? '#ffd45a' : '#fff2b0'} opacity="0" />
+        ))}
+      </g>
+
+      {/* 활동 아이콘 */}
+      {icons.map(({ id }) => (
+        <g key={id} ref={reg(`icon_${id}`)} opacity="0">
+          <circle r="52" fill="#fff4d8" stroke="#fff" strokeWidth="3" opacity="0.96" />
+          <circle r="52" fill="none" stroke="#e8d3a6" strokeWidth="2" strokeDasharray="3 6" />
+          {ICON_DRAWINGS[id]}
+        </g>
+      ))}
+    </>
+  )
+}
+
+export default memo(Actor)
