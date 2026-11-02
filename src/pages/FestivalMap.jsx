@@ -6,7 +6,8 @@ import JejuMap from '../components/JejuMap'
 import FestivalCard from '../components/FestivalCard'
 import StampModal from '../components/StampModal'
 import { fetchFestivals, fetchWeather } from '../api/client'
-import { distKm, driveMinutes, fmtKm } from '../lib/geo'
+import { distKm, driveMinutes, fmtKm, transitUrl } from '../lib/geo'
+import { fetchRoadRoute, fmtMin } from '../lib/roadRoute'
 import { SEASONS, seasonColor } from '../lib/jeju'
 import { daysBetween, fmtYmd, overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
 import { GROUPS, typeOf } from '../lib/festivalMeta'
@@ -105,6 +106,22 @@ export default function FestivalMap() {
   const legs = useMemo(() => route.slice(1).map((f, i) => distKm(route[i], f)), [route])
   const totalKm = legs.reduce((a, b) => a + b, 0)
 
+  // 실제 도로 길로 잰 거리·시간 (실패하면 위의 직선 어림값으로 대신한다)
+  const [road, setRoad] = useState({ key: '', status: 'idle', data: null })
+  const routeKey = route.map((f) => f.id).join(',')
+  useEffect(() => {
+    if (route.length < 2) return undefined
+    let alive = true
+    fetchRoadRoute(route)
+      .then((data) => alive && setRoad({ key: routeKey, status: 'ok', data }))
+      .catch(() => alive && setRoad({ key: routeKey, status: 'error', data: null }))
+    return () => { alive = false }
+    // route 는 routeKey 가 바뀔 때만 달라진다
+  }, [routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const roadOk = road.key === routeKey && road.status === 'ok' ? road.data : null
+  const roadLoading = route.length > 1 && road.key !== routeKey
+  const roadTotal = roadOk ? roadOk.legs.reduce((a, l) => ({ km: a.km + l.km, min: a.min + l.min }), { km: 0, min: 0 }) : null
+
   const stampOf = (f) => stamps.find((s) => s.festival_id === String(f.id))
   const openStamp = (f) =>
     user ? setStampTarget(f) : needLogin()
@@ -146,7 +163,7 @@ export default function FestivalMap() {
         <Col lg={8}>
           <div className="map-wrap">
             {loading && <div className="map-loading"><Spinner /></div>}
-            <JejuMap festivals={onMap} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} route={route} />
+            <JejuMap festivals={onMap} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} route={route} roadPath={roadOk?.path} />
           </div>
           <p className="small text-secondary mt-2 mb-0">
             {shown.length}곳 · 핀 색은 시작 계절이에요. 이미 끝난 행사는 내 일정에 담았을 때만 어두운 핀으로 보여요.
@@ -177,7 +194,13 @@ export default function FestivalMap() {
                     <div key={f.id}>
                       {i > 0 && (
                         <div className="small text-secondary ps-4 py-1">
-                          <i className="bi bi-arrow-down me-1" />직선 {fmtKm(legs[i - 1])} · 차로 약 {driveMinutes(legs[i - 1])}분
+                          <i className="bi bi-arrow-down me-1" />
+                          {roadOk
+                            ? <>도로 {fmtKm(roadOk.legs[i - 1].km)} · 차로 약 {fmtMin(roadOk.legs[i - 1].min)}</>
+                            : <>직선 {fmtKm(legs[i - 1])} · 차로 약 {fmtMin(driveMinutes(legs[i - 1]))}{roadLoading && ' (도로 길 계산 중…)'}</>}
+                          <a href={transitUrl(route[i - 1], f)} target="_blank" rel="noopener noreferrer" className="ms-2 text-nowrap">
+                            <i className="bi bi-bus-front me-1" />버스·대중교통
+                          </a>
                         </div>
                       )}
                       <ListGroup.Item action onClick={() => setSelected(f.id)} className="small py-2 d-flex gap-2 align-items-start">
@@ -191,9 +214,19 @@ export default function FestivalMap() {
                   ))}
                 </ListGroup>
                 {route.length > 1 && (
-                  <div className="small mt-2">총 직선 {fmtKm(totalKm)} · 차로 약 {driveMinutes(totalKm)}분</div>
+                  <div className="small mt-2">
+                    {roadTotal
+                      ? <>총 도로 {fmtKm(roadTotal.km)} · 차로 약 {fmtMin(roadTotal.min)}</>
+                      : <>총 직선 {fmtKm(totalKm)} · 차로 약 {fmtMin(driveMinutes(totalKm))}</>}
+                  </div>
                 )}
-                <div className="small text-secondary">직선거리로 어림잡은 값이에요. 실제 도로·교통과 달라요.</div>
+                <div className="small text-secondary">
+                  {roadOk
+                    ? '실제 도로 길(OpenStreetMap)로 잰 값이에요. 막히지 않을 때의 자동차 기준이라 실시간 교통은 반영하지 않아요.'
+                    : road.key === routeKey && road.status === 'error'
+                      ? '도로 길을 불러오지 못해 직선거리로 어림잡은 값을 보여줘요. 실제 도로·교통과 달라요.'
+                      : route.length > 1 && '도로 길을 계산하는 동안 직선거리로 어림잡은 값을 보여줘요.'}
+                </div>
               </>
             )}
           </div>

@@ -20,7 +20,7 @@ const pinIcon = (f, selected) =>
 
 // 제주 지도 (Leaflet + OpenStreetMap, 키 불필요).
 // 같은 장소에 몰린 행사는 숫자 묶음으로 보이고, 누르면 펼쳐진다. route 는 내 일정(날짜 순)이다.
-export default function JejuMap({ festivals, selectedId, onSelect, route = [] }) {
+export default function JejuMap({ festivals, selectedId, onSelect, route = [], roadPath }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const clusterRef = useRef(null)
@@ -123,7 +123,9 @@ export default function JejuMap({ festivals, selectedId, onSelect, route = [] })
     layer.clearLayers()
     if (route.length === 0) return
     if (route.length > 1) {
-      L.polyline(route.map((f) => [f.lat, f.lng]), { color: '#f08a17', weight: 4, opacity: 0.9, dashArray: '8 8' }).addTo(layer)
+      // 도로 길을 알면 실제 길을 따라 실선으로, 아니면 직선 점선으로 잇는다
+      if (roadPath?.length) L.polyline(roadPath, { color: '#f08a17', weight: 5, opacity: 0.9 }).addTo(layer)
+      else L.polyline(route.map((f) => [f.lat, f.lng]), { color: '#f08a17', weight: 4, opacity: 0.9, dashArray: '8 8' }).addTo(layer)
     }
     route.forEach((f, i) =>
       L.marker([f.lat, f.lng], {
@@ -132,7 +134,7 @@ export default function JejuMap({ festivals, selectedId, onSelect, route = [] })
         zIndexOffset: 1000,
       }).addTo(layer),
     )
-  }, [route])
+  }, [route, roadPath])
 
   return <div ref={elRef} className="jm-map" />
 }

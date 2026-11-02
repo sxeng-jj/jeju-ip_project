@@ -10,3 +10,9 @@ export function distKm(a, b) {
 export const driveMinutes = (km) => Math.max(5, Math.round(((km * 1.35) / 45) * 60 / 5) * 5)
 
 export const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`)
+
+// 카카오맵 대중교통 길찾기 링크(키 불필요): 눌러 보면 몇 번 버스를 타는지 카카오맵에서 바로 나온다.
+export const transitUrl = (a, b) => {
+  const spot = (f) => `${encodeURIComponent(f.title.replace(/[[\],/]/g, ' ').trim().slice(0, 20))},${f.lat},${f.lng}`
+  return `https://map.kakao.com/link/by/traffic/${spot(a)}/${spot(b)}`
+}
