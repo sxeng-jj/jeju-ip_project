@@ -5,7 +5,7 @@ import StampModal from '../components/StampModal'
 import WeatherBadge from '../components/WeatherBadge'
 import { fetchFestival, fetchFestivals, fetchWeather } from '../api/client'
 import { fmtYmd, statusOf } from '../lib/date'
-import { GROUP_STYLE, typeOf } from '../lib/festivalMeta'
+import { GROUP_STYLE, SOURCES, typeOf, typeText } from '../lib/festivalMeta'
 import { cityOf, forecastFor } from '../lib/weather'
 import { useAppStore } from '../store/useAppStore'
 
@@ -51,7 +51,7 @@ export default function FestivalDetail() {
   }, [id])
 
   const status = d ? statusOf(d) : null
-  const { group, label } = d ? typeOf(d) : {}
+  const { group } = d ? typeOf(d) : {}
   const w = d && forecastFor(d, weather)
   const photos = d ? [d.image, ...d.images].filter((u, i, a) => u && a.indexOf(u) === i) : []
 
@@ -75,7 +75,7 @@ export default function FestivalDetail() {
 
       <div className="d-flex flex-wrap gap-2 mb-2">
         <Badge bg={STATUS[status][0]}>{STATUS[status][1]}</Badge>
-        <Badge bg={GROUP_STYLE[group].bg} text={group === '행사' ? 'dark' : undefined}>{group} · {label}</Badge>
+        <Badge bg={GROUP_STYLE[group].bg} text={group === '행사' ? 'dark' : undefined}>{typeText(d)}</Badge>
         <Badge bg="dark">{d.city} {d.area.endsWith('시내') ? '' : d.area}</Badge>
       </div>
       <h2 className="fw-bold">{d.title}</h2>
@@ -183,6 +183,8 @@ export default function FestivalDetail() {
           </ListGroup>
         </section>
       )}
+
+      <p className="small text-secondary mt-5 mb-0">데이터 출처: {SOURCES[d.source] ?? '공공데이터포털'}</p>
 
       {stampTarget && <StampModal festival={stampTarget} existing={stamp} onSave={saveStamp} onClose={() => setStampTarget(null)} />}
     </Container>

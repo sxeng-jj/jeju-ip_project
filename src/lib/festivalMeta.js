@@ -17,18 +17,30 @@ export const EV_TYPES = {
   EV020800: { group: '공연', label: '영화' },
   EV020900: { group: '공연', label: '기타공연' },
   EV021000: { group: '공연', label: '넌버벌' },
-  EV030100: { group: '행사', label: '전시회' },
+  EV030100: { group: '전시', label: '전시회' },
   EV030200: { group: '행사', label: '박람회' },
   EV030300: { group: '행사', label: '스포츠경기' },
   EV030400: { group: '행사', label: '기타행사' },
 }
 
-export const GROUPS = ['축제', '공연', '행사']
+export const GROUPS = ['축제', '공연', '전시', '행사']
 
 export const GROUP_STYLE = {
   축제: { bg: 'danger', icon: 'balloon-heart', color: '#ff5f7e' },
   공연: { bg: 'info', icon: 'music-note-beamed', color: '#38c4f0' },
+  전시: { bg: 'primary', icon: 'easel', color: '#b58cff' },
   행사: { bg: 'warning', icon: 'flag', color: '#ffb02e' },
 }
 
-export const typeOf = (f) => EV_TYPES[f.lcls] ?? { group: '행사', label: '기타행사' }
+// 서버가 출처마다 group/label 을 채워 보낸다. 없으면 TourAPI 분류 코드(lcls)로 찾는다.
+export const typeOf = (f) => (f.group ? { group: f.group, label: f.label } : EV_TYPES[f.lcls] ?? { group: '행사', label: '기타행사' })
+
+// 카드 배지용 글자: 유형과 세부 종류가 같으면 한 번만
+export const typeText = (f) => { const { group, label } = typeOf(f); return label && label !== group ? `${group} · ${label}` : group }
+
+// 데이터 출처 이름 (상세 페이지 하단 표기)
+export const SOURCES = {
+  tour: '한국관광공사 TourAPI',
+  culture: '한국문화정보원 한눈에보는문화정보',
+  std: '전국문화축제표준데이터(제주특별자치도·제주시)',
+}

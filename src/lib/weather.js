@@ -1,6 +1,6 @@
 // 날씨(기상청)와 축제를 이어 붙이는 도우미
 
-export const cityOf = (festival) => (festival.addr?.includes('서귀포시') ? '서귀포시' : '제주시')
+export const cityOf = (festival) => festival.city ?? (festival.addr?.includes('서귀포시') ? '서귀포시' : '제주시')
 
 // 축제 기간과 겹치는 첫 예보일의 예보 (예보는 약 3일치라 없을 수 있다)
 export function forecastFor(festival, weather) {

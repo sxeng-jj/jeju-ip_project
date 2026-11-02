@@ -1,16 +1,11 @@
 // 한국관광공사 TourAPI 행사정보 (searchFestival2 + 상세 3종)
 // 주의: 지역은 areaCode=39 가 아니라 lDongRegnCd=50 (법정동 제주) 으로 걸어야 결과가 나온다.
+import { EV_TYPES } from '../src/lib/festivalMeta.js'
+import { areaOf } from './region.js'
 import { httpsUrl, tourCall } from './tourapi.js'
 
 const kstYear = () => new Date(Date.now() + 9 * 3600e3).getUTCFullYear()
 const SIGUNGU = { 110: '제주시', 130: '서귀포시' } // ldongCode2 로 확인한 코드
-
-// 주소 → 읍·면 이름 (동 지역은 '시내'로 묶는다)  예) '제주특별자치도 제주시 애월읍 …' → '애월읍'
-function areaOf(addr = '', city) {
-  const m = addr.match(/(?:제주시|서귀포시)\s+(\S+)/)
-  const token = m?.[1] ?? ''
-  return /[읍면]$/.test(token) ? token : `${city} 시내`
-}
 
 // year 해 1월 1일 이후까지 이어지는 제주 행사 (날짜는 'YYYYMMDD' 문자열)
 export async function searchFestivals({ year = kstYear(), rows = 100 } = {}) {
@@ -28,7 +23,9 @@ export async function searchFestivals({ year = kstYear(), rows = 100 } = {}) {
         addr: f.addr1,
         city, // 제주시 | 서귀포시
         area: areaOf(f.addr1, city), // 읍·면 또는 'OO시 시내'
-        lcls: f.lclsSystm3, // 유형 분류 코드 (이름표는 src/lib/festivalMeta.js)
+        lcls: f.lclsSystm3, // TourAPI 분류 코드
+        ...(EV_TYPES[f.lclsSystm3] ?? { group: '행사', label: '기타행사' }), // 화면용 유형 (이름표는 src/lib/festivalMeta.js)
+        source: 'tour',
         image: httpsUrl(f.firstimage),
         lng: Number(f.mapx),
         lat: Number(f.mapy),
@@ -70,6 +67,8 @@ export async function getFestivalDetail(id) {
     city,
     area: areaOf(common.addr1, city),
     lcls: common.lclsSystm3,
+    ...(EV_TYPES[common.lclsSystm3] ?? { group: '행사', label: '기타행사' }),
+    source: 'tour',
     tel: common.tel,
     homepage: link(intro?.eventhomepage) || link(common.homepage),
     image: httpsUrl(common.firstimage),

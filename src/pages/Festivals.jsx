@@ -19,6 +19,7 @@ const STATUSES = [
   { value: 'ended', label: '종료' },
 ]
 const count = (list, fn) => list.filter(fn).length
+const PAGE = 24
 
 // 축제·공연·행사를 검색하고, 지역·유형·상태로 거르고, 월별 목록 또는 월간 달력으로 본다
 export default function Festivals() {
@@ -42,6 +43,7 @@ export default function Festivals() {
   const [view, setView] = useState('list') // list | calendar
   const [year, setYear] = useState(thisYear)
   const [month, setMonth] = useState(0) // 0 = 전체 (달력에서는 1~12)
+  const [limit, setLimit] = useState(PAGE) // 카드 목록에 보여줄 개수 (더 보기로 늘린다)
 
   const nickname = useAppStore((s) => s.nickname)
   const stamps = useAppStore((s) => s.stamps)
@@ -86,6 +88,9 @@ export default function Festivals() {
     [filtered, year, month],
   )
 
+  // 조건이 바뀌면 처음 한 페이지부터 다시 보여준다
+  useEffect(() => { setLimit(PAGE) }, [query, city, area, group, status, year, month])
+
   const pickCity = (c) => { setCity(c); setArea('all') }
   const reset = () => { setQuery(''); setCity('all'); setArea('all'); setGroup('all'); setStatus('all') }
   const dirty = query || city !== 'all' || area !== 'all' || group !== 'all' || status !== 'all'
@@ -107,7 +112,7 @@ export default function Festivals() {
 
   return (
     <Container>
-      <PageHeader icon="calendar-event" title="제주 축제·행사" sub={`한국관광공사 TourAPI · 올해 이후 ${list.length}건`} />
+      <PageHeader icon="calendar-event" title="제주 축제·행사" sub={`축제·공연·전시·행사 ${list.length}건 · 한국관광공사, 한국문화정보원, 지자체 문화축제 데이터`} />
 
       <div className="small mb-3 p-2 px-3 rounded" style={{ background: 'rgba(0,0,0,.25)' }}>
         <strong className="me-2">오늘 날씨 (기상청)</strong>
@@ -197,12 +202,20 @@ export default function Festivals() {
       {!loading && !error && shown.length === 0 && <Alert variant="secondary">조건에 맞는 축제·행사가 없어요. 필터를 줄여 보세요.</Alert>}
 
       <Row xs={1} sm={2} lg={3} className="g-3 pb-5">
-        {shown.map((f) => (
+        {shown.slice(0, limit).map((f) => (
           <Col key={f.id}>
             <FestivalCard festival={f} weather={weather} stamped={Boolean(stampOf(f))} onStamp={openStamp} />
           </Col>
         ))}
       </Row>
+
+      {shown.length > limit && (
+        <div className="text-center pb-5">
+          <Button variant="outline-light" onClick={() => setLimit(limit + PAGE)}>
+            더 보기 ({shown.length - limit}건 남음)
+          </Button>
+        </div>
+      )}
 
       {stampTarget && (
         <StampModal festival={stampTarget} existing={stampOf(stampTarget)} onSave={saveStamp} onClose={() => setStampTarget(null)} />

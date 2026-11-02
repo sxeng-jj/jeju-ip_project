@@ -48,11 +48,21 @@ export function spreadPins(festivals) {
     }
     const cx = g.reduce((s, p) => s + p.x, 0) / g.length
     const cz = g.reduce((s, p) => s + p.z, 0) / g.length
-    const r = Math.max(0.4, (0.5 * g.length) / (2 * Math.PI)) // 이웃 핀과 약 0.5 간격
-    g.sort((a, b) => a.key.localeCompare(b.key)).forEach((p, i) => {
-      const a = -Math.PI / 2 + (2 * Math.PI * i) / g.length
-      out[p.id] = { x: cx + r * Math.cos(a), z: cz + r * Math.sin(a), ox: p.x, oz: p.z }
-    })
+    g.sort((a, b) => a.key.localeCompare(b.key))
+    if (g.length <= 7) {
+      const r = Math.max(0.4, (0.5 * g.length) / (2 * Math.PI)) // 이웃 핀과 약 0.5 간격
+      g.forEach((p, i) => {
+        const a = -Math.PI / 2 + (2 * Math.PI * i) / g.length
+        out[p.id] = { x: cx + r * Math.cos(a), z: cz + r * Math.sin(a), ox: p.x, oz: p.z }
+      })
+    } else {
+      // 많이 몰린 곳(예: 예술의전당 공연들)은 나선으로 퍼뜨려 반지름이 너무 커지지 않게 한다
+      g.forEach((p, i) => {
+        const r = 0.42 * Math.sqrt(i + 0.5)
+        const a = i * 2.399963 // 황금각
+        out[p.id] = { x: cx + r * Math.cos(a), z: cz + r * Math.sin(a), ox: p.x, oz: p.z }
+      })
+    }
   }
   return out
 }

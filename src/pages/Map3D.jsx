@@ -23,6 +23,7 @@ export default function Map3D() {
   const [error, setError] = useState('')
   const [month, setMonth] = useState(0)
   const [group, setGroup] = useState('all')
+  const [status, setStatus] = useState('active') // active = 진행중·예정 (전체를 켜면 핀이 너무 많아진다)
   const [selected, setSelected] = useState(params.get('festival')) // ?festival=ID 로 바로 선택
   const [stampTarget, setStampTarget] = useState(null)
 
@@ -47,9 +48,14 @@ export default function Map3D() {
   const shown = useMemo(
     () =>
       sortFestivals(
-        list.filter((f) => (month === 0 || overlapsMonth(f, thisYear, month)) && (group === 'all' || typeOf(f).group === group)),
+        list.filter(
+          (f) =>
+            (month === 0 || overlapsMonth(f, thisYear, month)) &&
+            (group === 'all' || typeOf(f).group === group) &&
+            (status === 'all' || statusOf(f) !== 'ended'),
+        ),
       ),
-    [list, month, group, thisYear],
+    [list, month, group, status, thisYear],
   )
   const current = shown.find((f) => f.id === selected)
   const focus = useMemo(() => (current ? { lat: current.lat, lng: current.lng } : null), [current])
@@ -67,6 +73,12 @@ export default function Map3D() {
           <Form.Select size="sm" value={month} onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}>
             <option value={0}>전체 기간</option>
             {Array.from({ length: 12 }, (_, i) => <option key={i} value={i + 1}>{i + 1}월</option>)}
+          </Form.Select>
+        </Col>
+        <Col xs="auto">
+          <Form.Select size="sm" value={status} onChange={(e) => { setStatus(e.target.value); setSelected(null) }}>
+            <option value="active">진행중·예정</option>
+            <option value="all">종료 포함 전체</option>
           </Form.Select>
         </Col>
         <Col xs="auto">

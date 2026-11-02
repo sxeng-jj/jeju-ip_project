@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Badge, Button, Card } from 'react-bootstrap'
 import WeatherBadge from './WeatherBadge'
 import { daysBetween, fmtYmd, statusOf, todayYmd } from '../lib/date'
-import { GROUP_STYLE, typeOf } from '../lib/festivalMeta'
+import { GROUP_STYLE, typeOf, typeText } from '../lib/festivalMeta'
 import { forecastFor } from '../lib/weather'
 
 const STATUS = {
@@ -14,7 +14,7 @@ const STATUS = {
 export default function FestivalCard({ festival: f, weather, stamped, onStamp }) {
   const status = statusOf(f)
   const s = STATUS[status]
-  const { group, label } = typeOf(f)
+  const { group } = typeOf(f)
   const w = forecastFor(f, weather)
 
   // 진행중이면 종료까지, 예정이면 시작까지 남은 날
@@ -33,14 +33,14 @@ export default function FestivalCard({ festival: f, weather, stamped, onStamp })
       <Card.Body>
         <div className="d-flex flex-wrap gap-1 mb-2">
           <Badge bg={s.bg}>{s.text}{dday}</Badge>
-          <Badge bg={GROUP_STYLE[group].bg} text={group === '행사' ? 'dark' : undefined}>{group} · {label}</Badge>
+          <Badge bg={GROUP_STYLE[group].bg} text={group === '행사' ? 'dark' : undefined}>{typeText(f)}</Badge>
         </div>
         <Card.Title className="fs-6">{f.title}</Card.Title>
         <Card.Text className="small mb-1">
           <i className="bi bi-calendar-event me-1" />{fmtYmd(f.start)} ~ {fmtYmd(f.end)}
         </Card.Text>
         <Card.Text className="small text-secondary mb-1">
-          <i className="bi bi-geo-alt me-1" />{f.city} {f.area.endsWith('시내') ? '' : f.area} · {f.addr}
+          <i className="bi bi-geo-alt me-1" />{[f.city, f.area.endsWith('시내') ? '' : f.area, f.addr || f.place].filter(Boolean).join(' · ')}
         </Card.Text>
         {w && <WeatherBadge w={w} showDate />}
       </Card.Body>
