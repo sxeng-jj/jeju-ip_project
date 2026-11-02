@@ -6,7 +6,7 @@ import WeatherBadge from '../components/WeatherBadge'
 import { fetchFestivals, fetchWeather } from '../api/client'
 import StampModal from '../components/StampModal'
 import { useAppStore } from '../store/useAppStore'
-import { monthOf } from '../lib/date'
+import { monthOf, sortFestivals } from '../lib/date'
 
 const MONTHS = ['전체', ...Array.from({ length: 12 }, (_, i) => `${i + 1}월`)]
 const CITIES = ['제주시', '서귀포시']
@@ -46,7 +46,7 @@ export default function Festivals() {
   }, [])
 
   const shown = useMemo(
-    () => (month === 0 ? list : list.filter((f) => monthOf(f.start) === month)),
+    () => sortFestivals(month === 0 ? list : list.filter((f) => monthOf(f.start) === month)),
     [list, month],
   )
 

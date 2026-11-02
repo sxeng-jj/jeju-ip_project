@@ -19,6 +19,44 @@ export function project(lng, lat) {
   return [(lng - CENTER.lng) * 93 * SCALE, -(lat - CENTER.lat) * 111 * SCALE]
 }
 
+// 같은 곳에 몰린 핀 펼치기
+// 가까운 핀(NEAR 이내)끼리 묶어서 묶음의 중심 둘레에 고리 모양으로 벌려 놓는다.
+// 반환: { [id]: { x, z, ox, oz } }  (x,z = 핀을 세울 자리, ox,oz = 실제 위치)
+const NEAR = 0.6
+
+export function spreadPins(festivals) {
+  const pts = festivals.map((f) => {
+    const [x, z] = project(f.lng, f.lat)
+    return { id: f.id, x, z, key: f.start + f.id }
+  })
+
+  // 묶음 찾기 (union-find)
+  const parent = pts.map((_, i) => i)
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+  for (let i = 0; i < pts.length; i++)
+    for (let j = i + 1; j < pts.length; j++)
+      if (Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z) < NEAR) parent[find(i)] = find(j)
+
+  const groups = {}
+  pts.forEach((p, i) => (groups[find(i)] ??= []).push(p))
+
+  const out = {}
+  for (const g of Object.values(groups)) {
+    if (g.length === 1) {
+      out[g[0].id] = { x: g[0].x, z: g[0].z, ox: g[0].x, oz: g[0].z }
+      continue
+    }
+    const cx = g.reduce((s, p) => s + p.x, 0) / g.length
+    const cz = g.reduce((s, p) => s + p.z, 0) / g.length
+    const r = Math.max(0.4, (0.5 * g.length) / (2 * Math.PI)) // 이웃 핀과 약 0.5 간격
+    g.sort((a, b) => a.key.localeCompare(b.key)).forEach((p, i) => {
+      const a = -Math.PI / 2 + (2 * Math.PI * i) / g.length
+      out[p.id] = { x: cx + r * Math.cos(a), z: cz + r * Math.sin(a), ox: p.x, oz: p.z }
+    })
+  }
+  return out
+}
+
 // 축제 시작 월 → 계절 색
 export function seasonOf(ymd) {
   const m = Number(ymd.slice(4, 6))

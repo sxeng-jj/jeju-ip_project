@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Col, Container, Form, Row, Spinner } from 'react-bootstrap'
+import { Alert, Col, Container, Form, ListGroup, Row, Spinner } from 'react-bootstrap'
 import PageHeader from '../components/PageHeader'
 import Jeju3D from '../components/Jeju3D'
 import FestivalCard from '../components/FestivalCard'
 import StampModal from '../components/StampModal'
 import { fetchFestivals, fetchWeather } from '../api/client'
-import { SEASONS } from '../lib/jeju'
-import { monthOf } from '../lib/date'
+import { SEASONS, seasonColor } from '../lib/jeju'
+import { monthOf, sortFestivals, statusOf } from '../lib/date'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
@@ -39,7 +39,10 @@ export default function Map3D() {
       .catch(() => {}) // 날씨는 없어도 지도는 보여준다
   }, [])
 
-  const shown = useMemo(() => (month === 0 ? list : list.filter((f) => monthOf(f.start) === month)), [list, month])
+  const shown = useMemo(
+    () => sortFestivals(month === 0 ? list : list.filter((f) => monthOf(f.start) === month)),
+    [list, month],
+  )
   const current = shown.find((f) => f.id === selected)
   const stampOf = (f) => stamps.find((s) => s.festival_id === String(f.id))
   const openStamp = (f) =>
@@ -79,8 +82,18 @@ export default function Map3D() {
           {current ? (
             <FestivalCard festival={current} weather={weather} stamped={Boolean(stampOf(current))} onStamp={openStamp} />
           ) : (
-            <Alert variant="secondary" className="mb-0">핀을 누르면 축제 정보가 여기에 나와요.</Alert>
+            <Alert variant="secondary">핀을 누르거나 아래 목록에서 축제를 골라 보세요.</Alert>
           )}
+
+          {/* 핀이 겹쳐 있어도 여기서 고를 수 있다 */}
+          <ListGroup className="mt-3 map3d-list">
+            {shown.map((f) => (
+              <ListGroup.Item key={f.id} action active={f.id === selected} onClick={() => setSelected(f.id)} className="small py-2">
+                <i className="bi bi-circle-fill me-2" style={{ color: seasonColor(f.start), opacity: statusOf(f) === 'ended' ? 0.4 : 1 }} />
+                {f.title}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
         </Col>
       </Row>
 
