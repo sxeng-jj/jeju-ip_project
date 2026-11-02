@@ -8,24 +8,48 @@ import StampModal from '../components/StampModal'
 import { fetchFestivals, fetchWeather } from '../api/client'
 import { distKm, driveMinutes, fmtKm } from '../lib/geo'
 import { SEASONS, seasonColor } from '../lib/jeju'
-import { fmtYmd, overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
+import { daysBetween, fmtYmd, overlapsMonth, sortFestivals, statusOf, todayYmd } from '../lib/date'
 import { GROUPS, typeOf } from '../lib/festivalMeta'
 import { useNeedLogin } from '../lib/useNeedLogin'
 import { useAppStore } from '../store/useAppStore'
 
 const CITIES = ['제주시', '서귀포시']
 
+// 지도에서 고를 수 있는 월: 이번 달부터 12개월. value 는 'YYYYMM', 올해가 아니면 라벨에 연도를 붙인다.
+function upcomingMonths(today) {
+  const y0 = Number(today.slice(0, 4))
+  const m0 = Number(today.slice(4, 6))
+  return Array.from({ length: 12 }, (_, i) => {
+    const idx = m0 - 1 + i
+    const y = y0 + Math.floor(idx / 12)
+    const m = (idx % 12) + 1
+    return { value: `${y}${String(m).padStart(2, '0')}`, y, m, label: y === y0 ? `${m}월` : `${y}년 ${m}월` }
+  })
+}
+
+// 목록 한 줄 아래에 붙일 상태 글자: '진행중 · 3일 후 종료' / '예정 · 5일 후 시작' / '종료'
+function statusText(f, today) {
+  const st = statusOf(f, today)
+  if (st === 'ended') return '종료'
+  if (st === 'ongoing') {
+    const left = daysBetween(today, f.end)
+    return left === 0 ? '진행중 · 오늘 종료' : `진행중 · ${left}일 후 종료`
+  }
+  return `예정 · ${daysBetween(today, f.start)}일 후 시작`
+}
+
 // 3D 제주 지도 — 축제·행사 핀을 누르면 카메라가 다가가고 정보 카드가 나온다
 export default function Map3D() {
   const [params] = useSearchParams()
-  const thisYear = Number(todayYmd().slice(0, 4))
+  const today = todayYmd()
+  const months = useMemo(() => upcomingMonths(today), [today])
   const [list, setList] = useState([])
   const [weather, setWeather] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [month, setMonth] = useState(0)
+  const [month, setMonth] = useState('') // '' = 전체 기간, 아니면 'YYYYMM'
   const [group, setGroup] = useState('all')
-  const [status, setStatus] = useState('active') // active = 진행중·예정 (전체를 켜면 핀이 너무 많아진다)
+  const [status, setStatus] = useState('active') // active = 진행중·예정 | ongoing = 진행중만 | upcoming = 곧 시작만 (종료된 행사는 지도에서 뺀다)
   const [selected, setSelected] = useState(params.get('festival')) // ?festival=ID 로 바로 선택
   const [stampTarget, setStampTarget] = useState(null)
 
@@ -53,19 +77,20 @@ export default function Map3D() {
       .catch(() => {}) // 날씨는 없어도 지도는 보여준다
   }, [])
 
-  const shown = useMemo(
-    () =>
-      sortFestivals(
-        list.filter(
-          (f) =>
-            (month === 0 || overlapsMonth(f, thisYear, month)) &&
-            (group === 'all' || typeOf(f).group === group) &&
-            (status === 'all' || statusOf(f) !== 'ended'),
-        ),
-      ),
-    [list, month, group, status, thisYear],
-  )
-  // 내 일정에 담았거나 지금 고른 행사는 필터에 걸려도 지도에 남긴다 (종료된 행사를 일정에 담은 경우 등)
+  const shown = useMemo(() => {
+    const mo = months.find((x) => x.value === month)
+    return sortFestivals(
+      list.filter((f) => {
+        const st = statusOf(f, today)
+        return (
+          (!mo || overlapsMonth(f, mo.y, mo.m)) &&
+          (group === 'all' || typeOf(f).group === group) &&
+          (status === 'ongoing' ? st === 'ongoing' : status === 'upcoming' ? st === 'upcoming' : st !== 'ended')
+        )
+      }),
+    )
+  }, [list, month, group, status, months, today])
+  // 내 일정에 담았거나 지금 고른 행사는 필터에 걸려도 지도에 남긴다 (종료된 행사를 일정에 담았거나 링크로 들어온 경우 등)
   const onMap = useMemo(() => {
     const have = new Set(shown.map((f) => f.id))
     return [...shown, ...list.filter((f) => !have.has(f.id) && (plan.includes(f.id) || f.id === selected))]
@@ -91,15 +116,16 @@ export default function Map3D() {
 
       <Row className="g-2 align-items-center mb-2">
         <Col xs="auto">
-          <Form.Select size="sm" value={month} onChange={(e) => { setMonth(Number(e.target.value)); setSelected(null) }}>
-            <option value={0}>전체 기간</option>
-            {Array.from({ length: 12 }, (_, i) => <option key={i} value={i + 1}>{i + 1}월</option>)}
+          <Form.Select size="sm" value={month} onChange={(e) => { setMonth(e.target.value); setSelected(null) }} aria-label="월 선택">
+            <option value="">전체 기간</option>
+            {months.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
           </Form.Select>
         </Col>
         <Col xs="auto">
-          <Form.Select size="sm" value={status} onChange={(e) => { setStatus(e.target.value); setSelected(null) }}>
+          <Form.Select size="sm" value={status} onChange={(e) => { setStatus(e.target.value); setSelected(null) }} aria-label="진행 상태">
             <option value="active">진행중·예정</option>
-            <option value="all">종료 포함 전체</option>
+            <option value="ongoing">진행중만</option>
+            <option value="upcoming">곧 시작만</option>
           </Form.Select>
         </Col>
         <Col xs="auto">
@@ -124,7 +150,7 @@ export default function Map3D() {
             <Jeju3D festivals={onMap} selectedId={selected} onSelect={(f) => setSelected(f ? f.id : null)} focus={focus} route={route} />
           </div>
           <p className="small text-secondary mt-2 mb-0">
-            {shown.length}곳 · 핀 색은 시작 계절, 밝게 빛나는 핀은 진행중·예정, 어두운 핀은 종료예요.
+            {shown.length}곳 · 핀 색은 시작 계절이에요. 이미 끝난 행사는 내 일정에 담았을 때만 어두운 핀으로 보여요.
           </p>
         </Col>
         <Col lg={4}>
@@ -174,11 +200,17 @@ export default function Map3D() {
           </div>
 
           {/* 핀이 겹쳐 있어도 여기서 고를 수 있다 */}
+          {!loading && !error && shown.length === 0 && (
+            <Alert variant="secondary" className="mt-3 small">조건에 맞는 진행중·예정 행사가 없어요. 기간이나 유형을 바꿔 보세요.</Alert>
+          )}
           <ListGroup className="mt-3 map3d-list">
             {shown.map((f) => (
-              <ListGroup.Item key={f.id} action active={f.id === selected} onClick={() => setSelected(f.id)} className="small py-2">
-                <i className="bi bi-circle-fill me-2" style={{ color: seasonColor(f.start), opacity: statusOf(f) === 'ended' ? 0.5 : 1 }} />
-                {f.title}
+              <ListGroup.Item key={f.id} action active={f.id === selected} onClick={() => setSelected(f.id)} className="small py-2 d-flex gap-2 align-items-start">
+                <i className="bi bi-circle-fill mt-1 flex-shrink-0" style={{ color: seasonColor(f.start), fontSize: '.7rem' }} />
+                <span style={{ minWidth: 0 }}>
+                  {f.title}
+                  <span className="d-block opacity-75" style={{ fontSize: '.72rem' }}>{statusText(f, today)}</span>
+                </span>
               </ListGroup.Item>
             ))}
           </ListGroup>
