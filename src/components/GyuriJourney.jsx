@@ -6,7 +6,7 @@ import { createAudio } from '../lib/introAudio'
 import { DURATION, ICONS, SCENES, SPEED, sceneIndexAt } from '../lib/intro'
 import { renderFrame } from '../lib/introRender'
 
-const LOOP_DELAY = 5 // 끝까지 본 뒤 이만큼(초) 지나면 저절로 처음부터 다시 재생한다
+const LOOP_DELAY = 60 // 끝까지 본 뒤 이만큼(초) 지나면 저절로 처음부터 다시 재생한다
 const END_AT = 40.5 // 마지막 장면(환영 인사)의 시각: 건너뛰기나 정지 화면은 여기로 간다
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
 
@@ -100,7 +100,7 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
       if (!done && t >= END_AT) { done = true; onDone?.() }
       if (done && !skipped && !reduced && !hidden && visible && !freeze) {
         idle += dt
-        if (idle >= LOOP_DELAY) { // 5초 뒤 처음부터 다시
+        if (idle >= LOOP_DELAY) { // 일정 시간(LOOP_DELAY) 뒤 처음부터 다시
           setCaption('')
           setPhase(0)
           setRun((r) => r + 1)
