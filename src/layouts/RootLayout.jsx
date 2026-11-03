@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Button, Container, Nav, Navbar, Toast } from 'react-bootstrap'
 import { NAV_ITEMS } from '../router'
 import BadgeUnlock from '../components/BadgeUnlock'
+import GuideWidget from '../components/GuideWidget'
 import { useAppStore } from '../store/useAppStore'
 
 export default function RootLayout() {
@@ -61,6 +62,7 @@ export default function RootLayout() {
       </footer>
 
       <BadgeUnlock />
+      <GuideWidget />
 
       <div className="toast-stack">
         {toasts.map((t) => (
