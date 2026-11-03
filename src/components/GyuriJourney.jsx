@@ -7,12 +7,13 @@ import { DURATION, ICONS, SCENES, SPEED, sceneIndexAt } from '../lib/intro'
 import { renderFrame } from '../lib/introRender'
 
 const LOOP_DELAY = 60 // 끝까지 본 뒤 이만큼(초) 지나면 저절로 처음부터 다시 재생한다
+const MAX_AUTO_REPLAYS = 2 // 저절로 다시 재생하는 횟수는 이만큼까지만 (그 뒤에는 마지막 장면에서 멈춘다)
 const END_AT = 40.5 // 마지막 장면(환영 인사)의 시각: 건너뛰기나 정지 화면은 여기로 간다
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
 
 // 「귤이의 제주 여행」: 귤 한 알이 굴러 제주의 풍경을 지나 일어서서 환영 인사를 하는 일러스트 애니메이션.
 // 홈 배너 안에서 바로 재생된다. autoplay=false 나 '움직임 줄이기' 설정이면 재생하지 않고 마지막 장면(문구·버튼 포함)만 보여 준다.
-export default function GyuriJourney({ autoplay = true, reduced = false, startAt = 0, freeze = false, onDone, onStart }) {
+export default function GyuriJourney({ autoplay = true, reduced = false, startAt = 0, freeze = false, maxAutoReplays = MAX_AUTO_REPLAYS, loopDelay = LOOP_DELAY, onDone, onStart }) {
   const still = !autoplay || reduced
   const wrap = useRef(null)
   const els = useRef({})
@@ -22,6 +23,7 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
   const bar = useRef(null)
   const mutedRef = useRef(true)
   const skipRef = useRef(false)
+  const autoRuns = useRef(0) // 저절로 다시 재생한 횟수 ('다시 보기'를 직접 누르면 처음부터 다시 센다)
 
   const [run, setRun] = useState(0)
   const [muted, setMuted] = useState(true)
@@ -98,9 +100,10 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
       if (p !== ph) { ph = p; setPhase(p) }
       if (bar.current) bar.current.style.width = `${Math.min(100, (t / DURATION) * 100).toFixed(1)}%`
       if (!done && t >= END_AT) { done = true; onDone?.() }
-      if (done && !skipped && !reduced && !hidden && visible && !freeze) {
+      if (done && !skipped && !reduced && !hidden && visible && !freeze && autoRuns.current < maxAutoReplays) {
         idle += dt
-        if (idle >= LOOP_DELAY) { // 일정 시간(LOOP_DELAY) 뒤 처음부터 다시
+        if (idle >= loopDelay) { // 일정 시간(LOOP_DELAY) 뒤 처음부터 다시 (정해진 횟수까지만)
+          autoRuns.current += 1
           setCaption('')
           setPhase(0)
           setRun((r) => r + 1)
@@ -127,6 +130,7 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
   }
   const skip = () => { skipRef.current = true }
   const replay = () => {
+    autoRuns.current = 0
     setCaption('')
     setPhase(0)
     setReplaying(true)

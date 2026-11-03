@@ -244,7 +244,7 @@ button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink);
 .hero-banner { border-radius: 1.25rem; overflow: hidden; box-shadow: 0 6px 22px rgba(22, 74, 48, 0.18); border: 1px solid var(--jeju-line); background: #ffd9a8; }
 
 /* 귤이의 제주 여행 (인트로) */
-.gj-host { position: relative; aspect-ratio: 16 / 9; min-height: 300px; max-height: 560px; width: 100%; }
+.gj-host { position: relative; height: clamp(280px, 32vw, 380px); width: 100%; } /* 검색창과 행사 목록이 첫 화면에 보이도록 낮게 */
 .gj-error { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; background: #fff2dd; }
 .gj { position: relative; width: 100%; height: 100%; overflow: hidden; background: #ffe9c4; user-select: none; }
 .gj-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -256,8 +256,8 @@ button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink);
 .gj-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.35); z-index: 3; }
 .gj-progress > div { height: 100%; width: 0; background: var(--jeju-orange); }
 .gj-welcome { position: absolute; left: 0; right: 0; top: 9%; text-align: center; z-index: 3; pointer-events: none; animation: gj-in 0.9s both; }
-.gj-hello { font-size: clamp(1.7rem, 4vw, 3.2rem); font-weight: 900; color: #fff8e6; letter-spacing: -0.02em; -webkit-text-stroke: 0; paint-order: stroke fill; text-shadow: 0 3px 0 #1f6b45, 0 0 18px rgba(31, 107, 69, 0.6), 0 6px 20px rgba(0, 0, 0, 0.25); }
-.gj-sub { margin-top: 0.15rem; font-size: clamp(1rem, 2vw, 1.5rem); font-weight: 800; color: #fff8e6; text-shadow: 0 2px 0 #1f6b45, 0 0 14px rgba(31, 107, 69, 0.6); }
+.gj-hello { font-size: clamp(1.5rem, 3vw, 2.4rem); font-weight: 900; color: #fff8e6; letter-spacing: -0.02em; -webkit-text-stroke: 0; paint-order: stroke fill; text-shadow: 0 3px 0 #1f6b45, 0 0 18px rgba(31, 107, 69, 0.6), 0 6px 20px rgba(0, 0, 0, 0.25); }
+.gj-sub { margin-top: 0.1rem; font-size: clamp(0.9rem, 1.6vw, 1.2rem); font-weight: 800; color: #fff8e6; text-shadow: 0 2px 0 #1f6b45, 0 0 14px rgba(31, 107, 69, 0.6); }
 .gj-cta { position: absolute; left: 0; right: 0; bottom: 1.1rem; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; animation: gj-in 0.7s both; }
 .gj-cta .btn-primary { box-shadow: 0 6px 18px rgba(240, 138, 23, 0.45); }
 @keyframes gj-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
