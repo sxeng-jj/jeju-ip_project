@@ -6,6 +6,7 @@ import { createAudio } from '../lib/introAudio'
 import { DURATION, ICONS, SCENES, SPEED, sceneIndexAt } from '../lib/intro'
 import { renderFrame } from '../lib/introRender'
 
+const LOOP_DELAY = 5 // 끝까지 본 뒤 이만큼(초) 지나면 저절로 처음부터 다시 재생한다
 const END_AT = 40.5 // 마지막 장면(환영 인사)의 시각: 건너뛰기나 정지 화면은 여기로 간다
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
 
@@ -59,13 +60,15 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
     skipRef.current = false
     let raf = 0
     let last = performance.now()
-    let t = startAt
+    let t = run === 0 ? startAt : 0
     let visible = true
     let hidden = document.hidden
     let scene = -1
     let cap = ''
     let ph = 0
     let done = false
+    let idle = 0 // 끝난 뒤 지난 시간(초)
+    let skipped = false // 건너뛰기로 끝에 온 경우에는 저절로 다시 재생하지 않는다
     const onVis = () => { hidden = document.hidden; last = performance.now() }
     document.addEventListener('visibilitychange', onVis)
     const ro = new ResizeObserver(size)
@@ -79,6 +82,7 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
       last = now
       if (skipRef.current) { // 건너뛰기: 마지막 장면으로
         skipRef.current = false
+        skipped = true
         t = Math.max(t, END_AT)
       } else if (!hidden && visible && !freeze) {
         const prev = t
@@ -94,6 +98,15 @@ export default function GyuriJourney({ autoplay = true, reduced = false, startAt
       if (p !== ph) { ph = p; setPhase(p) }
       if (bar.current) bar.current.style.width = `${Math.min(100, (t / DURATION) * 100).toFixed(1)}%`
       if (!done && t >= END_AT) { done = true; onDone?.() }
+      if (done && !skipped && !reduced && !hidden && visible && !freeze) {
+        idle += dt
+        if (idle >= LOOP_DELAY) { // 5초 뒤 처음부터 다시
+          setCaption('')
+          setPhase(0)
+          setRun((r) => r + 1)
+          return
+        }
+      }
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
