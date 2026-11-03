@@ -1,10 +1,10 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RootLayout from './layouts/RootLayout'
 import Home from './pages/Home'
 import Festivals from './pages/Festivals'
 import FestivalDetail from './pages/FestivalDetail'
 import Stamps from './pages/Stamps'
-import Agent from './pages/Agent'
+import Planner from './pages/Planner'
 import Login from './pages/Login'
 import ServiceStatus from './pages/ServiceStatus'
 import Signup from './pages/Signup'
@@ -17,7 +17,7 @@ export const NAV_ITEMS = [
   { to: '/festivals', label: '축제', icon: 'calendar-event' },
   { to: '/map', label: '지도', icon: 'map' },
   { to: '/stamps', label: '내 스탬프', icon: 'patch-check' },
-  { to: '/agent', label: 'AI 가이드', icon: 'robot' },
+  { to: '/planner', label: 'AI 일정', icon: 'calendar2-heart' },
 ]
 
 export const router = createBrowserRouter([
@@ -32,7 +32,8 @@ export const router = createBrowserRouter([
       // 지도 라이브러리(leaflet)는 이 페이지에 들어갈 때만 내려받는다
       { path: 'map', lazy: async () => ({ Component: (await import('./pages/FestivalMap')).default }) },
       { path: 'stamps', element: <Stamps /> },
-      { path: 'agent', element: <Agent /> },
+      { path: 'planner', element: <Planner /> },
+      { path: 'agent', element: <Navigate to="/planner" replace /> }, // 예전 주소
       { path: 'login', element: <Login /> },
       { path: 'status', element: <ServiceStatus /> },
       { path: 'signup', element: <Signup /> },

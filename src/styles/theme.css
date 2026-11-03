@@ -301,6 +301,8 @@ button.cal-day:hover { background: var(--jeju-green-50); color: var(--jeju-ink);
 .guide-msg.err { background: #fdecec; color: #8a1f1f; }
 .guide-chip { border: 1px solid var(--jeju-line); background: #fff; color: var(--jeju-green-dark); border-radius: 1rem; padding: 0.25rem 0.7rem; font-size: 0.8rem; }
 .guide-chip:hover { background: #f1f6f2; }
+.guide-choice { border-color: var(--jeju-orange); color: #8a4a00; font-weight: 700; }
+.guide-choice:hover { background: #fff3df; }
 .guide-form { display: flex; gap: 0.4rem; padding: 0.6rem; border-top: 1px solid var(--jeju-line); background: #fff; }
 .toast-stack { bottom: 4.6rem; }
 @media (max-width: 575.98px) { .guide-panel { right: 0.5rem; left: 0.5rem; width: auto; max-width: none; bottom: 4.4rem; } .guide-fab { right: 0.75rem; bottom: 0.75rem; } }

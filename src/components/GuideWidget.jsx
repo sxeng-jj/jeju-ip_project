@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link, matchPath, useLocation } from 'react-router-dom'
 import { post } from '../api/client'
+import { useAppStore } from '../store/useAppStore'
 
 const GENERAL_CHIPS = ['지금 진행 중인 축제 추천해줘', '서귀포 쪽 공연·전시 알려줘', '비 오는 날 갈 만한 실내 행사는?']
 const DETAIL_CHIPS = ['이 행사를 간단히 요약해줘', '이 행사 가기 전에 알아둘 점은?', '이 근처에서 같이 볼 행사는?']
@@ -24,6 +25,13 @@ function Rich({ text, onNavigate }) {
   return parts.map((p, i) => <Fragment key={i}>{p}</Fragment>)
 }
 
+// 답변 끝의 [[선택: 보기1 | 보기2]] 를 떼어 내 버튼 글자로 돌려준다 (예·아니오를 눌러서 답하게)
+const splitChoices = (text) => {
+  const m = text.match(/\[\[선택:\s*([^\]]+)\]\]\s*$/)
+  if (!m) return { body: text, choices: [] }
+  return { body: text.slice(0, m.index).trimEnd(), choices: m[1].split('|').map((c) => c.trim()).filter(Boolean).slice(0, 3) }
+}
+
 // 오른쪽 아래 AI 가이드: 어느 화면에서든 눌러서 작은 대화창으로 바로 물어볼 수 있다.
 // 지금 보고 있는 화면(행사 상세라면 그 행사)을 서버에 함께 알려 줘서 "이 행사"처럼 말해도 알아듣는다.
 export default function GuideWidget() {
@@ -31,19 +39,13 @@ export default function GuideWidget() {
   const detail = matchPath('/festivals/:id', pathname)
   const festivalId = detail?.params.id
 
+  const myPlan = useAppStore((s) => s.plan) // 내 일정에 담은 행사: AI 가 일정을 짤 때 확인한다
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([]) // [{ role, content, error? }]
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const listRef = useRef(null)
   const inputRef = useRef(null)
-
-  // 다른 곳(AI 가이드 화면의 버튼)에서 열어 달라고 할 때
-  useEffect(() => {
-    const openIt = () => setOpen(true)
-    window.addEventListener('open-guide', openIt)
-    return () => window.removeEventListener('open-guide', openIt)
-  }, [])
 
   useEffect(() => {
     if (!open) return undefined
@@ -68,6 +70,7 @@ export default function GuideWidget() {
       const { reply } = await post('/api/guide', {
         messages: next.slice(-MAX_TURNS).map(({ role, content }) => ({ role, content })),
         page: { path: pathname, festivalId },
+        plan: myPlan,
       })
       setMessages([...next, { role: 'assistant', content: reply }])
     } catch (e) {
@@ -92,11 +95,22 @@ export default function GuideWidget() {
             <div className="guide-msg bot">
               안녕하세요, 귤이예요 🍊 제주 축제·공연·전시를 찾아 드릴게요.{festivalId && ' 지금 보고 있는 행사에 대해서도 물어보세요.'}
             </div>
-            {messages.map((m, i) => (
-              <div key={i} className={`guide-msg ${m.role === 'user' ? 'me' : 'bot'}${m.error ? ' err' : ''}`}>
-                {m.role === 'user' ? m.content : <Rich text={m.content} onNavigate={() => setOpen(false)} />}
-              </div>
-            ))}
+            {messages.map((m, i) => {
+              const { body, choices } = m.role === 'assistant' && !m.error ? splitChoices(m.content) : { body: m.content, choices: [] }
+              const last = i === messages.length - 1
+              return (
+                <div key={i} className={m.role === 'user' ? undefined : 'd-flex flex-column gap-1 align-items-start'} style={m.role === 'user' ? { display: 'contents' } : undefined}>
+                  <div className={`guide-msg ${m.role === 'user' ? 'me' : 'bot'}${m.error ? ' err' : ''}`}>
+                    {m.role === 'user' ? m.content : <Rich text={body} onNavigate={() => setOpen(false)} />}
+                  </div>
+                  {last && !loading && choices.length > 0 && (
+                    <div className="d-flex flex-wrap gap-1">
+                      {choices.map((c) => <button key={c} type="button" className="guide-chip guide-choice" onClick={() => send(c)}>{c}</button>)}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
             {loading && <div className="guide-msg bot text-secondary">찾아보는 중… <span className="spinner-border spinner-border-sm ms-1" aria-hidden="true" /></div>}
             {messages.length === 0 && (
               <div className="d-flex flex-wrap gap-1 mt-1">

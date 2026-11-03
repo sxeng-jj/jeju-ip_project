@@ -148,6 +148,8 @@ export const useAppStore = create(
         const plan = get().plan
         set({ plan: plan.includes(id) ? plan.filter((x) => x !== id) : [...plan, id] })
       },
+      // 여러 곳을 한꺼번에 담는다 (AI 일정 결과). 이미 담은 곳은 그대로 두고 새로 담은 것만 뒤에 붙인다.
+      addToPlan: (ids) => set({ plan: [...get().plan, ...ids.filter((id) => !get().plan.includes(id))] }),
       clearPlan: () => set({ plan: [] }),
 
       removeStamp: async (id) => {
